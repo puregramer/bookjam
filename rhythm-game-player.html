@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>BookJam - Player</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Orbitron', 'Noto Sans KR', sans-serif;
+            background: #17C06D;
+            overflow: hidden;
+            color: white;
+            touch-action: none;
+        }
+
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Glassmorphism Menu */
+        #menu {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 50px 40px;
+            border-radius: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            max-width: 90vw;
+            animation: menuFadeIn 0.5s ease-out;
+        }
+
+        @keyframes menuFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #menu h1 {
+            font-size: clamp(28px, 6vw, 56px);
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+
+        #menu p {
+            font-size: clamp(14px, 3vw, 18px);
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        #menu-logo {
+            width: 200px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        .file-group {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+        }
+
+        .file-group h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px 35px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: clamp(14px, 3vw, 18px);
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            margin: 10px;
+        }
+
+        .file-input-label:hover {
+            transform: scale(1.05);
+        }
+
+        .file-input-label:active {
+            transform: scale(0.95);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-status {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .file-status.loaded {
+            color: #00ff00;
+        }
+
+        .start-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            padding: 18px 50px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: clamp(16px, 3vw, 22px);
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(17, 153, 142, 0.4);
+            margin-top: 30px;
+            border: none;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Touch Buttons */
+        .touch-button {
+            position: absolute;
+            bottom: 0;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(18px, 4vw, 28px);
+            font-weight: bold;
+            transition: all 0.1s ease;
+            cursor: pointer;
+            border-top: 3px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .touch-button.active {
+            background: rgba(255, 255, 255, 0.3) !important;
+            transform: scale(0.95);
+        }
+
+        canvas {
+            border-radius: 10px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+            max-width: 100vw;
+            max-height: 100vh;
+        }
+
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0) scale(1);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translateY(-100px) translateX(50px) scale(1.5);
+                opacity: 0.6;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles"></div>
+
+    <div id="game-container">
+        <div id="menu">
+            <img src="data:image/png;base64,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
+
+... [8 lines truncated] ..." alt="BookJam" style="width: 200px; margin-bottom: 20px;">
+            <p>리듬게임 플레이어</p>
+
+            <div class="file-group">
+                <h3>1. 차트 파일 (JSON)</h3>
+                <label for="chart-input" class="file-input-label">📄 차트 선택</label>
+                <input type="file" id="chart-input" accept=".json">
+                <div class="file-status" id="chart-status">선택 안 됨</div>
+            </div>
+
+            <div class="file-group">
+                <h3>2. 음원 파일 (MP3)</h3>
+                <label for="audio-input" class="file-input-label">🎵 음원 선택</label>
+                <input type="file" id="audio-input" accept="audio/*">
+                <div class="file-status" id="audio-status">선택 안 됨</div>
+            </div>
+
+            <button class="start-btn" id="start-btn" disabled>게임 시작</button>
+        </div>
+    </div>
+
+    <script src="https://pixijs.download/release/pixi.js"></script>
+    <script>
+        // Create Particle Background
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.width = Math.random() * 100 + 50 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        // 5 Lanes Configuration
+        const LANES = [
+            { key: 'KeyD', index: 0, color: 0xFF6B6B, label: 'D' },
+            { key: 'KeyF', index: 1, color: 0x4ECDC4, label: 'F' },
+            { key: 'Space', index: 2, color: 0xFFE66D, label: '␣' },
+            { key: 'KeyJ', index: 3, color: 0x95E1D3, label: 'J' },
+            { key: 'KeyK', index: 4, color: 0xF38181, label: 'K' }
+        ];
+
+        // Judgment Timing Windows
+        const JUDGMENT = {
+            PERFECT: { window: 50, score: 100, text: 'PERFECT!', color: 0xFFD700 },
+            GREAT: { window: 100, score: 70, text: 'GREAT', color: 0x00FF00 },
+            GOOD: { window: 150, score: 40, text: 'GOOD', color: 0x00FFFF },
+            MISS: { window: 200, score: 0, text: 'MISS', color: 0xFF0000 }
+        };
+
+        // Game State
+        const gameState = {
+            isPlaying: false,
+            score: 0,
+            combo: 0,
+            maxCombo: 0,
+            health: 100,
+            perfect: 0,
+            great: 0,
+            good: 0,
+            miss: 0,
+            notes: [],
+            chartData: null,
+            audioContext: null,
+            audioBuffer: null,
+            audioSource: null,
+            startTime: 0,
+            offset: 0,  // Chart offset for timing adjustment
+            touchButtons: []
+        };
+
+        let GAME_WIDTH, GAME_HEIGHT, LANE_WIDTH, NOTE_HEIGHT, NOTE_SPEED, JUDGMENT_LINE_Y, BUTTON_HEIGHT;
+
+        function calculateDimensions() {
+            GAME_WIDTH = Math.min(window.innerWidth, 1200);
+            GAME_HEIGHT = window.innerHeight;
+            LANE_WIDTH = GAME_WIDTH / LANES.length;
+            NOTE_HEIGHT = Math.max(15, GAME_HEIGHT * 0.025);
+            NOTE_SPEED = GAME_HEIGHT * 0.4;
+            BUTTON_HEIGHT = Math.max(100, GAME_HEIGHT * 0.15);
+            JUDGMENT_LINE_Y = GAME_HEIGHT - BUTTON_HEIGHT - 20;
+        }
+        calculateDimensions();
+
+        let app, gameContainer, uiContainer, notesContainer, particleContainer, beatGridContainer;
+        let judgmentText, scoreText, comboText, healthBar, accuracyText;
+
+        // File Inputs
+        let chartFile = null;
+        let audioFile = null;
+
+        document.getElementById('chart-input').addEventListener('change', (e) => {
+            chartFile = e.target.files[0];
+            if (chartFile) {
+                document.getElementById('chart-status').textContent = '✓ ' + chartFile.name;
+                document.getElementById('chart-status').classList.add('loaded');
+                checkFilesReady();
+            }
+        });
+
+        document.getElementById('audio-input').addEventListener('change', (e) => {
+            audioFile = e.target.files[0];
+            if (audioFile) {
+                document.getElementById('audio-status').textContent = '✓ ' + audioFile.name;
+                document.getElementById('audio-status').classList.add('loaded');
+                checkFilesReady();
+            }
+        });
+
+        function checkFilesReady() {
+            if (chartFile && audioFile) {
+                document.getElementById('start-btn').disabled = false;
+            }
+        }
+
+        document.getElementById('start-btn').addEventListener('click', async () => {
+            await loadFiles();
+        });
+
+        async function loadFiles() {
+            try {
+                // Load chart JSON
+                const chartText = await chartFile.text();
+                gameState.chartData = JSON.parse(chartText);
+
+                // Validate chart
+                if (!gameState.chartData.notes || !Array.isArray(gameState.chartData.notes)) {
+                    throw new Error('Invalid chart format: notes array not found');
+                }
+
+                // Load chart metadata
+                gameState.offset = gameState.chartData.offset || 0;
+                const title = gameState.chartData.title || 'Untitled';
+                const difficulty = gameState.chartData.difficulty || 'Unknown';
+                const bpm = gameState.chartData.bpm || 120;
+                const noteCount = gameState.chartData.notes.length;
+                const nps = gameState.chartData.metadata?.nps || (noteCount / (gameState.chartData.duration || 1)).toFixed(2);
+
+                console.log('📊 Chart loaded:');
+                console.log(`   Title: ${title}`);
+                console.log(`   Difficulty: ${difficulty}`);
+                console.log(`   BPM: ${bpm}`);
+                console.log(`   Offset: ${gameState.offset}s`);
+                console.log(`   Notes: ${noteCount}`);
+                console.log(`   NPS: ${nps}`);
+                if (gameState.chartData.audioFileName) {
+                    console.log(`   Audio: ${gameState.chartData.audioFileName}`);
+                }
+                if (gameState.chartData.metadata?.createdAt) {
+                    console.log(`   Created: ${new Date(gameState.chartData.metadata.createdAt).toLocaleString()}`);
+                }
+
+                // Copy notes
+                gameState.notes = gameState.chartData.notes.map(note => ({
+                    time: note.time,
+                    lane: note.lane,
+                    hit: false,
+                    missed: false
+                }));
+
+                // Load audio
+                if (!gameState.audioContext) {
+                    gameState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+
+                const arrayBuffer = await audioFile.arrayBuffer();
+                gameState.audioBuffer = await gameState.audioContext.decodeAudioData(arrayBuffer);
+
+                console.log(`✅ Audio loaded: ${gameState.audioBuffer.duration.toFixed(2)}s`);
+
+                // Show chart info before starting
+                alert(`🎵 ${title}\n난이도: ${difficulty}\nBPM: ${bpm}\n노트: ${noteCount}개 (NPS: ${nps})\n\n준비되면 게임이 시작됩니다!`);
+
+                // Hide menu and start game
+                document.getElementById('menu').classList.add('hidden');
+                await initGame();
+            } catch (error) {
+                console.error('Error loading files:', error);
+                alert('파일 로드 실패: ' + error.message + '\n\n에디터에서 생성한 차트 파일(.json)인지 확인해주세요.');
+            }
+        }
+
+        async function initGame() {
+            calculateDimensions();
+
+            app = new PIXI.Application();
+            await app.init({
+                width: GAME_WIDTH,
+                height: GAME_HEIGHT,
+                backgroundColor: 0x0a0a0a,
+                antialias: true,
+                resolution: window.devicePixelRatio || 1
+            });
+
+            document.getElementById('game-container').innerHTML = '';
+            document.getElementById('game-container').appendChild(app.canvas);
+
+            gameContainer = new PIXI.Container();
+            beatGridContainer = new PIXI.Container();
+            notesContainer = new PIXI.Container();
+            particleContainer = new PIXI.Container();
+            uiContainer = new PIXI.Container();
+
+            app.stage.addChild(gameContainer);
+            app.stage.addChild(beatGridContainer);
+            app.stage.addChild(notesContainer);
+            app.stage.addChild(particleContainer);
+            app.stage.addChild(uiContainer);
+
+            drawLanes();
+            drawJudgmentLine();
+            createUI();
+            setupInput();
+            createTouchButtons();
+
+            app.ticker.add(gameLoop);
+            playAudio();
+        }
+
+        function drawLanes() {
+            for (let i = 0; i < LANES.length; i++) {
+                const lane = new PIXI.Graphics();
+
+                // Lane background
+                lane.rect(i * LANE_WIDTH, 0, LANE_WIDTH, GAME_HEIGHT / 2);
+                lane.fill({ color: 0x16213e, alpha: 0.2 });
+
+                lane.rect(i * LANE_WIDTH, GAME_HEIGHT / 2, LANE_WIDTH, GAME_HEIGHT / 2);
+                lane.fill({ color: 0x16213e, alpha: 0.4 });
+
+                // Lane border
+                lane.moveTo(i * LANE_WIDTH, 0);
+                lane.lineTo(i * LANE_WIDTH, GAME_HEIGHT);
+                lane.stroke({ color: LANES[i].color, width: 2, alpha: 0.5 });
+
+                gameContainer.addChild(lane);
+            }
+        }
+
+        function drawJudgmentLine() {
+            const line = new PIXI.Graphics();
+            line.moveTo(0, JUDGMENT_LINE_Y);
+            line.lineTo(GAME_WIDTH, JUDGMENT_LINE_Y);
+            line.stroke({ color: 0xFFFFFF, width: 4 });
+
+            const glow = new PIXI.Graphics();
+            glow.moveTo(0, JUDGMENT_LINE_Y);
+            glow.lineTo(GAME_WIDTH, JUDGMENT_LINE_Y);
+            glow.stroke({ color: 0xFFFFFF, width: 20, alpha: 0.2 });
+
+            gameContainer.addChild(glow);
+            gameContainer.addChild(line);
+        }
+
+        function createUI() {
+            // Score panel
+            const scoreBg = new PIXI.Graphics();
+            scoreBg.roundRect(20, 20, 250, 80, 15);
+            scoreBg.fill({ color: 0x000000, alpha: 0.3 });
+            uiContainer.addChild(scoreBg);
+
+            scoreText = new PIXI.Text({
+                text: '0',
+                style: {
+                    fontSize: Math.max(32, GAME_HEIGHT * 0.04),
+                    fill: 0xFFFFFF,
+                    fontWeight: 'bold',
+                    fontFamily: 'Orbitron'
+                }
+            });
+            scoreText.x = 40;
+            scoreText.y = 30;
+            uiContainer.addChild(scoreText);
+
+            const scoreLabel = new PIXI.Text({
+                text: 'SCORE',
+                style: {
+                    fontSize: Math.max(14, GAME_HEIGHT * 0.02),
+                    fill: 0x888888,
+                    fontFamily: 'Orbitron'
+                }
+            });
+            scoreLabel.x = 40;
+            scoreLabel.y = 70;
+            uiContainer.addChild(scoreLabel);
+
+            // Combo
+            comboText = new PIXI.Text({
+                text: '',
+                style: {
+                    fontSize: Math.max(48, GAME_HEIGHT * 0.08),
+                    fill: 0xFFD700,
+                    fontWeight: 'bold',
+                    fontFamily: 'Orbitron',
+                    dropShadow: {
+                        color: 0x000000,
+                        blur: 4,
+                        distance: 2
+                    }
+                }
+            });
+            comboText.anchor.set(0.5);
+            comboText.x = GAME_WIDTH / 2;
+            comboText.y = GAME_HEIGHT / 2 - 150;
+            uiContainer.addChild(comboText);
+
+            // Judgment text
+            judgmentText = new PIXI.Text({
+                text: '',
+                style: {
+                    fontSize: Math.max(36, GAME_HEIGHT * 0.06),
+                    fill: 0xFFFFFF,
+                    fontWeight: 'bold',
+                    fontFamily: 'Orbitron'
+                }
+            });
+            judgmentText.anchor.set(0.5);
+            judgmentText.x = GAME_WIDTH / 2;
+            judgmentText.y = JUDGMENT_LINE_Y - 100;
+            judgmentText.alpha = 0;
+            uiContainer.addChild(judgmentText);
+
+            // Health bar
+            const healthBg = new PIXI.Graphics();
+            healthBg.roundRect(GAME_WIDTH - 270, 20, 250, 30, 15);
+            healthBg.fill({ color: 0x333333, alpha: 0.5 });
+            uiContainer.addChild(healthBg);
+
+            healthBar = new PIXI.Graphics();
+            updateHealthBar();
+            uiContainer.addChild(healthBar);
+
+            const healthLabel = new PIXI.Text({
+                text: 'HEALTH',
+                style: {
+                    fontSize: Math.max(14, GAME_HEIGHT * 0.02),
+                    fill: 0x888888,
+                    fontFamily: 'Orbitron'
+                }
+            });
+            healthLabel.x = GAME_WIDTH - 270;
+            healthLabel.y = 55;
+            uiContainer.addChild(healthLabel);
+
+            // Accuracy
+            accuracyText = new PIXI.Text({
+                text: 'ACCURACY: 100%',
+                style: {
+                    fontSize: Math.max(16, GAME_HEIGHT * 0.025),
+                    fill: 0xFFFFFF,
+                    fontFamily: 'Orbitron'
+                }
+            });
+            accuracyText.anchor.set(0.5, 0);
+            accuracyText.x = GAME_WIDTH / 2;
+            accuracyText.y = 20;
+            uiContainer.addChild(accuracyText);
+
+            // Chart info (Title & Difficulty)
+            if (gameState.chartData) {
+                const title = gameState.chartData.title || 'Untitled';
+                const difficulty = gameState.chartData.difficulty || 'Unknown';
+
+                const chartInfoBg = new PIXI.Graphics();
+                chartInfoBg.roundRect(20, GAME_HEIGHT - 110, 300, 70, 15);
+                chartInfoBg.fill({ color: 0x000000, alpha: 0.3 });
+                uiContainer.addChild(chartInfoBg);
+
+                const titleText = new PIXI.Text({
+                    text: title,
+                    style: {
+                        fontSize: Math.max(18, GAME_HEIGHT * 0.028),
+                        fill: 0xFFFFFF,
+                        fontWeight: 'bold',
+                        fontFamily: 'Orbitron'
+                    }
+                });
+                titleText.x = 40;
+                titleText.y = GAME_HEIGHT - 95;
+                uiContainer.addChild(titleText);
+
+                // Difficulty color
+                const difficultyColors = {
+                    'Easy': 0x00FF00,
+                    'Normal': 0x00FFFF,
+                    'Hard': 0xFFFF00,
+                    'Expert': 0xFF0000
+                };
+                const diffColor = difficultyColors[difficulty] || 0x888888;
+
+                const difficultyText = new PIXI.Text({
+                    text: difficulty.toUpperCase(),
+                    style: {
+                        fontSize: Math.max(14, GAME_HEIGHT * 0.022),
+                        fill: diffColor,
+                        fontWeight: 'bold',
+                        fontFamily: 'Orbitron'
+                    }
+                });
+                difficultyText.x = 40;
+                difficultyText.y = GAME_HEIGHT - 65;
+                uiContainer.addChild(difficultyText);
+            }
+        }
+
+        function updateHealthBar() {
+            healthBar.clear();
+            healthBar.roundRect(GAME_WIDTH - 270, 20, 250 * (gameState.health / 100), 30, 15);
+            const healthColor = gameState.health > 50 ? 0x00FF00 : gameState.health > 25 ? 0xFFFF00 : 0xFF0000;
+            healthBar.fill({ color: healthColor });
+        }
+
+        function createTouchButtons() {
+            for (let i = 0; i < LANES.length; i++) {
+                const button = document.createElement('div');
+                button.className = 'touch-button';
+                button.style.left = (i * LANE_WIDTH) + 'px';
+                button.style.width = LANE_WIDTH + 'px';
+                button.style.height = BUTTON_HEIGHT + 'px';
+                button.textContent = LANES[i].label;
+                button.style.color = '#' + LANES[i].color.toString(16).padStart(6, '0');
+                button.style.background = `rgba(${(LANES[i].color >> 16) & 255}, ${(LANES[i].color >> 8) & 255}, ${LANES[i].color & 255}, 0.2)`;
+
+                button.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    button.classList.add('active');
+                    handleKeyPress(i);
+                    showKeyPress(i);
+                }, { passive: false });
+
+                button.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    button.classList.remove('active');
+                }, { passive: false });
+
+                button.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    button.classList.add('active');
+                    handleKeyPress(i);
+                    showKeyPress(i);
+                });
+
+                button.addEventListener('mouseup', (e) => {
+                    e.preventDefault();
+                    button.classList.remove('active');
+                });
+
+                button.addEventListener('mouseleave', () => {
+                    button.classList.remove('active');
+                });
+
+                document.getElementById('game-container').appendChild(button);
+                gameState.touchButtons.push(button);
+            }
+        }
+
+        function setupInput() {
+            const keyStates = {};
+
+            window.addEventListener('keydown', (e) => {
+                if (keyStates[e.code]) return;
+                keyStates[e.code] = true;
+
+                const lane = LANES.find(l => l.key === e.code);
+                if (lane) {
+                    handleKeyPress(lane.index);
+                    showKeyPress(lane.index);
+                    if (gameState.touchButtons[lane.index]) {
+                        gameState.touchButtons[lane.index].classList.add('active');
+                    }
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                keyStates[e.code] = false;
+                const lane = LANES.find(l => l.key === e.code);
+                if (lane && gameState.touchButtons[lane.index]) {
+                    gameState.touchButtons[lane.index].classList.remove('active');
+                }
+            });
+        }
+
+        function showKeyPress(laneIndex) {
+            const flash = new PIXI.Graphics();
+            flash.rect(laneIndex * LANE_WIDTH, JUDGMENT_LINE_Y - 100, LANE_WIDTH, 200);
+            flash.fill({ color: LANES[laneIndex].color, alpha: 0.4 });
+            gameContainer.addChild(flash);
+
+            let alpha = 0.4;
+            const fadeOut = () => {
+                alpha -= 0.04;
+                flash.alpha = alpha;
+                if (alpha <= 0) {
+                    gameContainer.removeChild(flash);
+                } else {
+                    requestAnimationFrame(fadeOut);
+                }
+            };
+            fadeOut();
+        }
+
+        function createHitParticles(x, y, color) {
+            for (let i = 0; i < 10; i++) {
+                const particle = new PIXI.Graphics();
+                const size = Math.random() * 5 + 3;
+                particle.circle(0, 0, size);
+                particle.fill({ color: color, alpha: 1 });
+                particle.x = x;
+                particle.y = y;
+
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 5 + 2;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+
+                particleContainer.addChild(particle);
+
+                let life = 1;
+                const animate = () => {
+                    particle.x += vx;
+                    particle.y += vy;
+                    life -= 0.02;
+                    particle.alpha = life;
+
+                    if (life > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        particleContainer.removeChild(particle);
+                    }
+                };
+                animate();
+            }
+        }
+
+        function handleKeyPress(laneIndex) {
+            const currentTime = gameState.audioContext.currentTime - gameState.startTime;
+
+            let closestNote = null;
+            let minTimeDiff = Infinity;
+
+            for (const note of gameState.notes) {
+                if (note.lane === laneIndex && !note.hit && !note.missed) {
+                    const timeDiff = Math.abs((note.time - currentTime) * 1000);
+                    if (timeDiff < JUDGMENT.MISS.window && timeDiff < minTimeDiff) {
+                        closestNote = note;
+                        minTimeDiff = timeDiff;
+                    }
+                }
+            }
+
+            if (closestNote) {
+                let judgment;
+                if (minTimeDiff <= JUDGMENT.PERFECT.window) {
+                    judgment = JUDGMENT.PERFECT;
+                    gameState.perfect++;
+                } else if (minTimeDiff <= JUDGMENT.GREAT.window) {
+                    judgment = JUDGMENT.GREAT;
+                    gameState.great++;
+                } else if (minTimeDiff <= JUDGMENT.GOOD.window) {
+                    judgment = JUDGMENT.GOOD;
+                    gameState.good++;
+                } else {
+                    judgment = JUDGMENT.MISS;
+                    gameState.miss++;
+                }
+
+                closestNote.hit = true;
+                updateScore(judgment);
+                showJudgment(judgment);
+
+                if (closestNote.sprite) {
+                    createHitParticles(
+                        closestNote.sprite.x + LANE_WIDTH / 2,
+                        closestNote.sprite.y,
+                        LANES[laneIndex].color
+                    );
+                }
+            }
+        }
+
+        function updateScore(judgment) {
+            gameState.score += judgment.score;
+
+            if (judgment !== JUDGMENT.MISS) {
+                gameState.combo++;
+                gameState.maxCombo = Math.max(gameState.maxCombo, gameState.combo);
+            } else {
+                gameState.combo = 0;
+                gameState.health = Math.max(0, gameState.health - 5);
+            }
+
+            scoreText.text = gameState.score.toLocaleString();
+            comboText.text = gameState.combo > 0 ? `${gameState.combo} COMBO` : '';
+
+            const totalHits = gameState.perfect + gameState.great + gameState.good + gameState.miss;
+            if (totalHits > 0) {
+                const accuracy = ((gameState.perfect * 100 + gameState.great * 70 + gameState.good * 40) / (totalHits * 100) * 100).toFixed(1);
+                accuracyText.text = `ACCURACY: ${accuracy}%`;
+            }
+
+            updateHealthBar();
+        }
+
+        function showJudgment(judgment) {
+            judgmentText.text = judgment.text;
+            judgmentText.style.fill = judgment.color;
+            judgmentText.alpha = 1;
+            judgmentText.scale.set(1.2);
+
+            let alpha = 1;
+            let scale = 1.2;
+            const fadeOut = () => {
+                alpha -= 0.03;
+                scale -= 0.006;
+                judgmentText.alpha = alpha;
+                judgmentText.scale.set(Math.max(1, scale));
+                if (alpha > 0) {
+                    requestAnimationFrame(fadeOut);
+                }
+            };
+            fadeOut();
+        }
+
+        function playAudio() {
+            gameState.audioSource = gameState.audioContext.createBufferSource();
+            gameState.audioSource.buffer = gameState.audioBuffer;
+            gameState.audioSource.connect(gameState.audioContext.destination);
+
+            // Start audio at offset position (skip the offset amount)
+            // Note: chart offset represents when the first beat occurs in the audio
+            // Since note times already include the offset, we don't need to skip
+            gameState.audioSource.start(0);
+            gameState.startTime = gameState.audioContext.currentTime;
+            gameState.isPlaying = true;
+
+            gameState.audioSource.onended = () => {
+                endGame();
+            };
+        }
+
+        function gameLoop(ticker) {
+            if (!gameState.isPlaying) return;
+
+            const currentTime = gameState.audioContext.currentTime - gameState.startTime;
+
+            // Draw beat grid lines
+            beatGridContainer.removeChildren();
+            if (gameState.chartData && gameState.chartData.bpm) {
+                const beatDuration = 60 / gameState.chartData.bpm;
+                const visibleTime = GAME_HEIGHT / NOTE_SPEED;
+                const startBeat = Math.floor((currentTime - gameState.offset) / beatDuration);
+                const endBeat = Math.ceil((currentTime + visibleTime - gameState.offset) / beatDuration);
+
+                for (let beat = startBeat; beat <= endBeat; beat++) {
+                    const beatTime = beat * beatDuration + gameState.offset;
+                    const timeDiff = beatTime - currentTime;
+                    const lineY = JUDGMENT_LINE_Y - timeDiff * NOTE_SPEED;
+
+                    if (lineY > -10 && lineY < GAME_HEIGHT + 10) {
+                        const line = new PIXI.Graphics();
+
+                        // Different colors for different beat types
+                        if (beat % 4 === 0) {
+                            // Measure line (white, thick)
+                            line.moveTo(0, lineY);
+                            line.lineTo(GAME_WIDTH, lineY);
+                            line.stroke({ color: 0xFFFFFF, width: 2, alpha: 0.3 });
+                        } else {
+                            // Regular beat line (gray, thin)
+                            line.moveTo(0, lineY);
+                            line.lineTo(GAME_WIDTH, lineY);
+                            line.stroke({ color: 0x888888, width: 1, alpha: 0.15 });
+                        }
+
+                        beatGridContainer.addChild(line);
+                    }
+                }
+            }
+
+            for (const note of gameState.notes) {
+                if (note.hit || note.missed) continue;
+
+                const noteY = JUDGMENT_LINE_Y - (note.time - currentTime) * NOTE_SPEED;
+
+                if (noteY > -NOTE_HEIGHT && noteY < GAME_HEIGHT) {
+                    if (!note.sprite) {
+                        note.sprite = new PIXI.Graphics();
+                        note.sprite.roundRect(0, 0, LANE_WIDTH - 10, NOTE_HEIGHT, 8);
+                        note.sprite.fill({ color: LANES[note.lane].color });
+
+                        const glow = new PIXI.Graphics();
+                        glow.roundRect(-2, -2, LANE_WIDTH - 6, NOTE_HEIGHT + 4, 10);
+                        glow.fill({ color: LANES[note.lane].color, alpha: 0.3 });
+
+                        const container = new PIXI.Container();
+                        container.addChild(glow);
+                        container.addChild(note.sprite);
+                        note.sprite = container;
+
+                        notesContainer.addChild(note.sprite);
+                    }
+
+                    note.sprite.x = note.lane * LANE_WIDTH + 5;
+                    note.sprite.y = noteY;
+                }
+
+                if (noteY > JUDGMENT_LINE_Y + JUDGMENT.MISS.window && !note.hit) {
+                    note.missed = true;
+                    if (note.sprite) {
+                        notesContainer.removeChild(note.sprite);
+                        note.sprite = null;
+                    }
+                    gameState.miss++;
+                    updateScore(JUDGMENT.MISS);
+                    showJudgment(JUDGMENT.MISS);
+                }
+            }
+
+            for (const note of gameState.notes) {
+                if (note.hit && note.sprite) {
+                    notesContainer.removeChild(note.sprite);
+                    note.sprite = null;
+                }
+            }
+
+            if (gameState.health <= 0) {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            gameState.isPlaying = false;
+
+            if (gameState.audioSource) {
+                try {
+                    gameState.audioSource.stop();
+                } catch (e) {}
+            }
+
+            const results = new PIXI.Container();
+
+            const bg = new PIXI.Graphics();
+            bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            bg.fill({ color: 0x000000, alpha: 0.85 });
+            results.addChild(bg);
+
+            const panel = new PIXI.Graphics();
+            panel.roundRect(GAME_WIDTH / 2 - 300, GAME_HEIGHT / 2 - 250, 600, 500, 20);
+            panel.fill({ color: 0x1a1a2e, alpha: 0.95 });
+            panel.stroke({ color: 0x667eea, width: 3 });
+            results.addChild(panel);
+
+            const titleText = new PIXI.Text({
+                text: gameState.health > 0 ? 'CLEAR!' : 'GAME OVER',
+                style: {
+                    fontSize: 56,
+                    fill: gameState.health > 0 ? 0xFFD700 : 0xFF6B6B,
+                    fontWeight: 'bold',
+                    fontFamily: 'Orbitron'
+                }
+            });
+            titleText.anchor.set(0.5);
+            titleText.x = GAME_WIDTH / 2;
+            titleText.y = GAME_HEIGHT / 2 - 200;
+            results.addChild(titleText);
+
+            // Chart info (Title & Difficulty)
+            if (gameState.chartData) {
+                const chartTitle = gameState.chartData.title || 'Untitled';
+                const difficulty = gameState.chartData.difficulty || 'Unknown';
+
+                const chartInfoText = new PIXI.Text({
+                    text: `${chartTitle} [${difficulty}]`,
+                    style: {
+                        fontSize: 20,
+                        fill: 0x667eea,
+                        fontFamily: 'Orbitron'
+                    }
+                });
+                chartInfoText.anchor.set(0.5);
+                chartInfoText.x = GAME_WIDTH / 2;
+                chartInfoText.y = GAME_HEIGHT / 2 - 160;
+                results.addChild(chartInfoText);
+            }
+
+            const totalHits = gameState.perfect + gameState.great + gameState.good + gameState.miss;
+            const accuracy = totalHits > 0 ? ((gameState.perfect * 100 + gameState.great * 70 + gameState.good * 40) / (totalHits * 100) * 100).toFixed(1) : 0;
+
+            const statsText = new PIXI.Text({
+                text: `SCORE: ${gameState.score.toLocaleString()}\nMAX COMBO: ${gameState.maxCombo}\nACCURACY: ${accuracy}%\n\nPERFECT: ${gameState.perfect}\nGREAT: ${gameState.great}\nGOOD: ${gameState.good}\nMISS: ${gameState.miss}`,
+                style: {
+                    fontSize: 24,
+                    fill: 0xFFFFFF,
+                    align: 'center',
+                    fontFamily: 'Orbitron',
+                    lineHeight: 35
+                }
+            });
+            statsText.anchor.set(0.5);
+            statsText.x = GAME_WIDTH / 2;
+            statsText.y = GAME_HEIGHT / 2;
+            results.addChild(statsText);
+
+            const restartText = new PIXI.Text({
+                text: 'TAP 또는 R키로 재시작',
+                style: {
+                    fontSize: 20,
+                    fill: 0x888888,
+                    align: 'center',
+                    fontFamily: 'Orbitron'
+                }
+            });
+            restartText.anchor.set(0.5);
+            restartText.x = GAME_WIDTH / 2;
+            restartText.y = GAME_HEIGHT / 2 + 200;
+            results.addChild(restartText);
+
+            app.stage.addChild(results);
+
+            const restartHandler = () => {
+                location.reload();
+            };
+
+            results.eventMode = 'static';
+            results.on('pointerdown', restartHandler);
+
+            const keyHandler = (e) => {
+                if (e.key === 'r' || e.key === 'R' || e.key === 'Escape') {
+                    window.removeEventListener('keydown', keyHandler);
+                    location.reload();
+                }
+            };
+            window.addEventListener('keydown', keyHandler);
+        }
+
+        window.addEventListener('resize', () => {
+            if (!gameState.isPlaying) {
+                calculateDimensions();
+            }
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (gameState.isPlaying) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>

@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookJam - Note Editor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Orbitron', 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #0F2027 0%, #203A43 50%, #2C5364 100%);
+            color: white;
+            overflow: hidden;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #control-panel {
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.5);
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        label {
+            font-size: 12px;
+            color: #aaa;
+            white-space: nowrap;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        input[type="number"], input[type="text"], select {
+            padding: 6px 10px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+        }
+
+        input[type="number"] {
+            width: 80px;
+        }
+
+        input[type="text"] {
+            width: 150px;
+        }
+
+        select {
+            width: 120px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #editor-container {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #left-sidebar {
+            width: 200px;
+            background: rgba(0, 0, 0, 0.9);
+            border-right: 2px solid rgba(102, 126, 234, 0.3);
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        #left-sidebar h3 {
+            margin-bottom: 10px;
+            color: #667eea;
+            font-size: 14px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .info-box {
+            background: rgba(102, 126, 234, 0.15);
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        #editor-canvas {
+            flex: 1;
+            background: #0a0a0a;
+            position: relative;
+        }
+
+        #editor-canvas canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        #right-sidebar {
+            width: 220px;
+            background: rgba(0, 0, 0, 0.9);
+            border-left: 2px solid rgba(102, 126, 234, 0.3);
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        #right-sidebar h3 {
+            margin-bottom: 10px;
+            color: #667eea;
+            font-size: 14px;
+        }
+
+        .info-item {
+            margin: 8px 0;
+            font-size: 12px;
+        }
+
+        .info-item strong {
+            color: #667eea;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .stat-box {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-box .label {
+            font-size: 10px;
+            color: #aaa;
+            margin-bottom: 4px;
+        }
+
+        .stat-box .value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .key-hint {
+            background: rgba(102, 126, 234, 0.2);
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .density-graph, #minimap {
+            width: 100%;
+            height: 80px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 6px;
+            margin-top: 10px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        #loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h2 id="loading-text">분석 중...</h2>
+            <p id="loading-detail">잠시만 기다려주세요</p>
+        </div>
+    </div>
+
+    <div id="container">
+        <div id="control-panel">
+            <div class="control-group">
+                <label for="file-input" class="btn btn-primary">📁 음원 로드</label>
+                <input type="file" id="file-input" accept="audio/*">
+                <span id="file-name" style="font-size: 11px;">파일 없음</span>
+            </div>
+
+            <div class="control-group">
+                <label>BPM:</label>
+                <input type="number" id="bpm-input" value="0" min="60" max="240" step="0.5">
+                <button class="btn btn-primary" id="override-bpm-btn" style="padding: 6px 10px; font-size: 10px;" disabled>적용</button>
+                <button class="btn btn-success" id="tap-bpm-btn" style="padding: 6px 10px; font-size: 10px;" disabled>🎵 Tap</button>
+            </div>
+
+            <div class="control-group">
+                <label>Offset:</label>
+                <input type="number" id="offset-input" value="0" step="0.01" style="width: 70px;">
+                <button class="btn btn-primary" id="offset-minus-btn" style="padding: 6px 8px; font-size: 10px;" disabled>-0.01</button>
+                <button class="btn btn-primary" id="offset-plus-btn" style="padding: 6px 8px; font-size: 10px;" disabled>+0.01</button>
+                <button class="btn btn-success" id="mark-beat-btn" style="padding: 6px 10px; font-size: 10px;" disabled>1박</button>
+            </div>
+
+            <div class="control-group">
+                <label>제목:</label>
+                <input type="text" id="title-input" placeholder="Title">
+            </div>
+
+            <div class="control-group">
+                <label>난이도:</label>
+                <select id="difficulty-select">
+                    <option value="Easy">Easy</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Hard" selected>Hard</option>
+                    <option value="Expert">Expert</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <button class="btn btn-primary" id="play-btn" disabled>▶ 재생</button>
+                <button class="btn btn-danger" id="stop-btn" disabled>⏹ 정지</button>
+            </div>
+
+            <div class="control-group">
+                <button class="btn btn-success" id="regen-btn" disabled>🔄 재생성</button>
+                <button class="btn btn-success" id="save-btn" disabled>💾 저장</button>
+                <label for="load-chart-input" class="btn btn-primary" id="load-chart-btn" disabled>📂 불러오기</label>
+                <input type="file" id="load-chart-input" accept=".json">
+                <button class="btn btn-primary" id="toggle-onset-btn" disabled>👁️ Onset</button>
+            </div>
+
+            <div class="control-group">
+                <button class="btn btn-danger" id="delete-note-btn" disabled>🗑️ 노트 삭제</button>
+                <button class="btn btn-primary" id="edit-mode-btn" disabled>✏️ 편집모드</button>
+                <span id="edit-mode-status" style="font-size: 11px; color: #aaa;">일반모드</span>
+            </div>
+        </div>
+
+        <div id="editor-container">
+            <div id="left-sidebar">
+                <div class="sidebar-section">
+                    <h3>🎯 Pure Onset 시스템</h3>
+                    <div class="info-box">
+                        <strong>확률 없음! 1:1 매핑!</strong><br>
+                        <br>
+                        <strong>✅ 원샷 = 노트:</strong><br>
+                        • Onset 감지 → 무조건 노트<br>
+                        • 확률/랜덤 완전 제거<br>
+                        • BPM 그리드에 스냅 (1/16박)<br>
+                        <br>
+                        <strong>🎧 악기별 자동 매핑:</strong><br>
+                        • Kick → 왼손 (D↔F)<br>
+                        • Snare → 오른손 (J↔K)<br>
+                        • Hi-hat → 오른손 (J↔K)<br>
+                        <br>
+                        <strong>난이도 = Threshold:</strong><br>
+                        Easy: 강한 비트만<br>
+                        Hard: 중간 비트까지<br>
+                        Expert: 약한 비트까지
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>👁️ Onset 시각화</h3>
+                    <div class="info-box">
+                        <strong>🔍 Onset 버튼:</strong><br>
+                        감지된 비트를 시각화!<br>
+                        <br>
+                        <strong>색상 의미:</strong><br>
+                        <span style="color: #00FFFF;">● 청록색</span> - 노트 생성됨<br>
+                        <span style="color: #FFFF00;">● 노란색</span> - 중간 강도<br>
+                        <span style="color: #FFA500;">● 주황색</span> - 약한 비트<br>
+                        <br>
+                        <strong>악기 표시:</strong><br>
+                        <span style="color: #FF6B6B;">K</span> = Kick (킥드럼)<br>
+                        <span style="color: #4ECDC4;">S</span> = Snare (스네어)<br>
+                        <span style="color: #FFE66D;">H</span> = Hi-hat (하이햇)<br>
+                        <br>
+                        청록색 선이 노트와 일치하는지<br>
+                        확인해서 타이밍 검증!
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>⚙️ 수동 조정</h3>
+                    <div class="info-box">
+                        <strong>🎵 Tap BPM:</strong><br>
+                        재생하며 1박마다 클릭<br>
+                        → 자동으로 BPM 계산<br>
+                        <br>
+                        <strong>1박 버튼:</strong><br>
+                        재생 중 1박에서 클릭<br>
+                        → Offset 자동 설정<br>
+                        <br>
+                        <strong>미세조정:</strong><br>
+                        • +/- 버튼으로 0.01초씩<br>
+                        • 노트가 흰 선에 맞게<br>
+                        <br>
+                        <strong>순서:</strong><br>
+                        1. Tap BPM으로 BPM 측정<br>
+                        2. "적용" 클릭<br>
+                        3. 재생하며 1박 버튼<br>
+                        4. +/- 로 미세조정
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>레인 매핑</h3>
+                    <div class="info-box">
+                        <strong>🎮 디제이맥스 패턴!</strong><br>
+                        <br>
+                        <strong>Kick:</strong> 왼손 (D↔F)<br>
+                        <strong>Snare:</strong> 오른손 (J↔K)<br>
+                        <strong>Hi-hat:</strong> 오른손 (J↔K)<br>
+                        <br>
+                        <strong>강박:</strong> 왼손↔오른손 교대<br>
+                        <strong>약박:</strong> 같은 손 연타<br>
+                        <strong>Space:</strong> 거의 안 씀<br>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>난이도별 특성</h3>
+                    <div class="info-box">
+                        <strong>Easy:</strong> 1/2박자 (downbeat)<br>
+                        <strong>Normal:</strong> 1/4박자<br>
+                        <strong>Hard:</strong> 1/4 + 1/8박자<br>
+                        <strong>Expert:</strong> 1/4+1/8+1/16박자<br>
+                        <br>
+                        <strong>밀도 조절:</strong><br>
+                        Chorus 130%, Verse 100%<br>
+                        Break 60%, Intro 40%
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>수동 조정</h3>
+                    <div class="info-box">
+                        재생하며 노트 추가:<br>
+                        D, F, Space, J, K<br>
+                        <br>
+                        Delete: 마지막 삭제<br>
+                        🔄 재생성: 새로 생성
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>✏️ 편집 모드 (E)</h3>
+                    <div class="info-box">
+                        <strong>노트 선택:</strong><br>
+                        • 노트 클릭으로 선택/해제<br>
+                        • ESC: 선택 해제<br>
+                        <br>
+                        <strong>선택된 노트 편집:</strong><br>
+                        • D/F/Space/J/K: 레인 이동<br>
+                        • ←/→: 타이밍 조정 (±10ms)<br>
+                        • Delete/Backspace: 삭제<br>
+                        <br>
+                        <strong>단축키:</strong><br>
+                        • E: 편집모드 토글<br>
+                        • Ctrl+S: 차트 저장
+                    </div>
+                </div>
+            </div>
+
+            <div id="editor-canvas"></div>
+
+            <div id="right-sidebar">
+                <h3>CHART INFO</h3>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="label">NOTES</div>
+                        <div class="value" id="note-count">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="label">NPS</div>
+                        <div class="value" id="nps-display">0.0</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <div class="info-item">
+                        시간: <strong id="current-time">0.00s</strong>
+                    </div>
+                    <div class="info-item">
+                        박자: <strong id="current-beat">0</strong>
+                    </div>
+                    <div class="info-item">
+                        상태: <strong id="status">대기 중</strong>
+                    </div>
+                    <div class="info-item">
+                        BPM: <strong id="detected-bpm">-</strong>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px;">DENSITY</h3>
+                <canvas id="density-graph" class="density-graph"></canvas>
+
+                <h3 style="margin-top: 20px;">MINIMAP</h3>
+                <canvas id="minimap"></canvas>
+
+                <div class="key-hint">
+                    <strong>🎹 단축키</strong><br>
+                    <kbd>D F Space J K</kbd> 노트<br>
+                    <kbd>Delete</kbd> 삭제<br>
+                    <kbd>Space</kbd> 재생/정지<br>
+                    <br>
+                    <strong>💡 사용법</strong><br>
+                    1. 음원만 로드하세요!<br>
+                    2. 자동으로 분석됩니다<br>
+                    3. 바로 재생 가능!<br>
+                    4. Offset으로 미세조정
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://pixijs.download/release/pixi.js"></script>
+    <script>
+        const LANES = [
+            { key: 'KeyD', index: 0, color: 0xFF6B6B, label: 'D' },
+            { key: 'KeyF', index: 1, color: 0x4ECDC4, label: 'F' },
+            { key: 'Space', index: 2, color: 0xFFE66D, label: '␣' },
+            { key: 'KeyJ', index: 3, color: 0x95E1D3, label: 'J' },
+            { key: 'KeyK', index: 4, color: 0xF38181, label: 'K' }
+        ];
+
+        const editorState = {
+            notes: [],
+            audioContext: null,
+            audioBuffer: null,
+            audioSource: null,
+            startTime: 0,
+            currentTime: 0,
+            isPlaying: false,
+            bpm: 0,
+            offset: 0,
+            title: '',
+            difficulty: 'Hard',
+            duration: 0,
+            onsets: [],  // Overall onset strengths
+            onsetTimes: [],
+            bassOnsets: [],   // Bass line (40-100Hz) - Task #3
+            kickOnsets: [],   // Kick drum (100-150Hz) - Task #3
+            snareOnsets: [],  // Snare drum (mid freq)
+            hihatOnsets: [],  // Hi-hat (high freq)
+            melodyOnsets: [],  // Melody (200-2000Hz, spectral flux) - Task #1
+            musicStructure: [], // Music structure sections (Intro/Verse/Chorus) - Task #2
+            showOnsets: false,   // Toggle onset visualization
+            editMode: false,     // Edit mode for note selection/editing
+            selectedNotes: new Set(),  // Set of selected note indices
+            audioFileName: ''    // Original audio file name
+        };
+
+        let app, gameContainer, notesContainer, gridContainer, beatGridContainer, onsetMarkersContainer;
+        let GAME_WIDTH, GAME_HEIGHT, LANE_WIDTH, JUDGMENT_LINE_Y;
+
+        function showLoading(text, detail = '') {
+            document.getElementById('loading-text').textContent = text;
+            document.getElementById('loading-detail').textContent = detail;
+            document.getElementById('loading-overlay').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.remove('show');
+        }
+
+        function calculateDimensions() {
+            const canvas = document.getElementById('editor-canvas');
+            GAME_WIDTH = canvas.clientWidth;
+            GAME_HEIGHT = canvas.clientHeight;
+            LANE_WIDTH = GAME_WIDTH / LANES.length;
+            JUDGMENT_LINE_Y = GAME_HEIGHT - 100;
+        }
+
+        window.addEventListener('load', async () => {
+            setupUI();
+            await initEditor();
+        });
+
+        function setupUI() {
+            document.getElementById('file-input').addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    document.getElementById('file-name').textContent = file.name.substring(0, 20);
+                    document.getElementById('title-input').value = file.name.replace(/\.[^/.]+$/, "");
+                    editorState.title = file.name.replace(/\.[^/.]+$/, "");
+                    editorState.audioFileName = file.name;  // 오디오 파일 이름 저장
+                    await loadAndAnalyzeAudio(file);
+                }
+            });
+
+            document.getElementById('play-btn').addEventListener('click', togglePlayback);
+            document.getElementById('stop-btn').addEventListener('click', stopPlayback);
+            document.getElementById('save-btn').addEventListener('click', saveChart);
+            document.getElementById('load-chart-input').addEventListener('change', loadChart);
+            document.getElementById('regen-btn').addEventListener('click', regenerateNotes);
+
+            document.getElementById('override-bpm-btn').addEventListener('click', () => {
+                const newBPM = parseFloat(document.getElementById('bpm-input').value);
+                if (newBPM >= 60 && newBPM <= 240) {
+                    editorState.bpm = newBPM;
+                    regenerateNotes();
+                    console.log(`✏️ BPM manually adjusted to ${newBPM}`);
+                } else {
+                    alert('BPM은 60-240 사이여야 합니다.');
+                }
+            });
+
+            document.getElementById('offset-input').addEventListener('change', (e) => {
+                editorState.offset = parseFloat(e.target.value);
+                regenerateNotes();
+                console.log(`✏️ Offset manually adjusted to ${editorState.offset.toFixed(3)}s`);
+            });
+
+            document.getElementById('offset-minus-btn').addEventListener('click', () => {
+                editorState.offset -= 0.01;
+                document.getElementById('offset-input').value = editorState.offset.toFixed(3);
+                regenerateNotes();
+                console.log(`✏️ Offset: ${editorState.offset.toFixed(3)}s`);
+            });
+
+            document.getElementById('offset-plus-btn').addEventListener('click', () => {
+                editorState.offset += 0.01;
+                document.getElementById('offset-input').value = editorState.offset.toFixed(3);
+                regenerateNotes();
+                console.log(`✏️ Offset: ${editorState.offset.toFixed(3)}s`);
+            });
+
+            // Tap BPM 기능
+            let tapTimes = [];
+            document.getElementById('tap-bpm-btn').addEventListener('click', () => {
+                const now = Date.now();
+                tapTimes.push(now);
+
+                // 최근 8번의 탭만 유지
+                if (tapTimes.length > 8) {
+                    tapTimes.shift();
+                }
+
+                if (tapTimes.length >= 2) {
+                    // 탭 간격의 평균 계산
+                    const intervals = [];
+                    for (let i = 1; i < tapTimes.length; i++) {
+                        intervals.push(tapTimes[i] - tapTimes[i - 1]);
+                    }
+                    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+                    const bpm = 60000 / avgInterval;  // ms to BPM
+
+                    document.getElementById('bpm-input').value = bpm.toFixed(1);
+                    console.log(`🎵 Tap BPM: ${bpm.toFixed(1)} (${tapTimes.length} taps)`);
+                }
+
+                // 5초 이상 탭 안 하면 리셋
+                setTimeout(() => {
+                    const lastTap = tapTimes[tapTimes.length - 1];
+                    if (Date.now() - lastTap > 5000) {
+                        tapTimes = [];
+                        console.log('Tap BPM reset');
+                    }
+                }, 5000);
+            });
+
+            // Mark Beat 기능 (1박 위치 표시)
+            document.getElementById('mark-beat-btn').addEventListener('click', () => {
+                if (editorState.isPlaying) {
+                    const currentTime = editorState.currentTime;
+                    document.getElementById('offset-input').value = currentTime.toFixed(3);
+                    editorState.offset = currentTime;
+                    regenerateNotes();
+                    console.log(`✏️ Marked beat at ${currentTime.toFixed(3)}s as offset`);
+                } else {
+                    alert('재생 중에 1박에서 버튼을 누르세요!');
+                }
+            });
+
+            document.getElementById('difficulty-select').addEventListener('change', (e) => {
+                editorState.difficulty = e.target.value;
+                if (editorState.audioBuffer) {
+                    regenerateNotes();
+                }
+            });
+
+            // Toggle Onset Visualization
+            document.getElementById('toggle-onset-btn').addEventListener('click', () => {
+                editorState.showOnsets = !editorState.showOnsets;
+                const btn = document.getElementById('toggle-onset-btn');
+                if (editorState.showOnsets) {
+                    btn.textContent = '👁️ Onset ON';
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-success');
+                    console.log('🔍 Onset visualization enabled');
+                } else {
+                    btn.textContent = '👁️ Onset';
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-primary');
+                    console.log('🔍 Onset visualization disabled');
+                }
+            });
+
+            // Toggle Edit Mode
+            document.getElementById('edit-mode-btn').addEventListener('click', toggleEditMode);
+
+            // Delete Selected Notes
+            document.getElementById('delete-note-btn').addEventListener('click', deleteSelectedNotes);
+
+            window.addEventListener('keydown', handleKeyDown);
+        }
+
+        function handleKeyDown(e) {
+            const activeElement = document.activeElement;
+            const isTyping = activeElement.tagName === 'INPUT';
+
+            if (!isTyping) {
+                // 편집 모드에서 선택된 노트 편집
+                if (editorState.editMode && editorState.selectedNotes.size > 0) {
+                    // Delete/Backspace: 선택된 노트 삭제
+                    if (e.code === 'Delete' || e.code === 'Backspace') {
+                        e.preventDefault();
+                        deleteSelectedNotes();
+                        return;
+                    }
+
+                    // 레인 변경: D(0), F(1), Space(2), J(3), K(4)
+                    const laneMap = { 'KeyD': 0, 'KeyF': 1, 'Space': 2, 'KeyJ': 3, 'KeyK': 4 };
+                    if (laneMap.hasOwnProperty(e.code)) {
+                        e.preventDefault();
+                        moveSelectedNotesToLane(laneMap[e.code]);
+                        return;
+                    }
+
+                    // 타이밍 미세 조정: ArrowLeft (앞으로), ArrowRight (뒤로)
+                    if (e.code === 'ArrowLeft') {
+                        e.preventDefault();
+                        adjustSelectedNotesTiming(-0.01);  // 10ms 앞으로
+                        return;
+                    }
+                    if (e.code === 'ArrowRight') {
+                        e.preventDefault();
+                        adjustSelectedNotesTiming(0.01);  // 10ms 뒤로
+                        return;
+                    }
+
+                    // Escape: 선택 해제
+                    if (e.code === 'Escape') {
+                        e.preventDefault();
+                        editorState.selectedNotes.clear();
+                        console.log('✅ 모든 노트 선택 해제');
+                        return;
+                    }
+                }
+
+                // 일반 모드 단축키
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    togglePlayback();
+                    return;
+                }
+
+                if (e.code === 'Delete' || e.code === 'Backspace') {
+                    e.preventDefault();
+                    deleteLastNote();
+                    return;
+                }
+
+                const lane = LANES.find(l => l.key === e.code);
+                if (lane && editorState.isPlaying) {
+                    e.preventDefault();
+                    const time = editorState.currentTime;
+                    addNote(lane.index, time);
+                    showKeyFlash(lane.index);
+                }
+
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    saveChart();
+                }
+
+                // E: 편집 모드 토글
+                if (e.code === 'KeyE') {
+                    e.preventDefault();
+                    toggleEditMode();
+                }
+            }
+        }
+
+        async function loadAndAnalyzeAudio(file) {
+            try {
+                showLoading('음원 로딩 중...', '오디오 디코딩');
+
+                if (!editorState.audioContext) {
+                    editorState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+
+                const arrayBuffer = await file.arrayBuffer();
+                editorState.audioBuffer = await editorState.audioContext.decodeAudioData(arrayBuffer);
+                editorState.duration = editorState.audioBuffer.duration;
+
+                showLoading('BPM 분석 중...', '템포 및 비트 감지');
+
+                // BPM 및 첫 비트 오프셋 자동 감지
+                const { bpm: detectedBPM, offset: detectedOffset, onsets, onsetTimes, bassOnsets, kickOnsets, snareOnsets, hihatOnsets, melodyOnsets, musicStructure } = await detectBPMAndOffset(editorState.audioBuffer);
+                editorState.bpm = detectedBPM;
+                editorState.offset = detectedOffset;
+                editorState.onsets = onsets;
+                editorState.onsetTimes = onsetTimes;
+                editorState.bassOnsets = bassOnsets;   // Task #3
+                editorState.kickOnsets = kickOnsets;
+                editorState.snareOnsets = snareOnsets;
+                editorState.hihatOnsets = hihatOnsets;
+                editorState.melodyOnsets = melodyOnsets; // Task #1
+                editorState.musicStructure = musicStructure; // Task #2
+
+                document.getElementById('bpm-input').value = detectedBPM.toFixed(1);
+                document.getElementById('offset-input').value = detectedOffset.toFixed(3);
+                document.getElementById('detected-bpm').textContent = detectedBPM.toFixed(1);
+
+                showLoading('노트 생성 중...', '난이도: ' + editorState.difficulty);
+
+                // 자동 노트 생성
+                generateNotes();
+
+                hideLoading();
+
+                document.getElementById('status').textContent = '준비 완료!';
+                document.getElementById('play-btn').disabled = false;
+                document.getElementById('stop-btn').disabled = false;
+                document.getElementById('regen-btn').disabled = false;
+                document.getElementById('save-btn').disabled = false;
+                document.getElementById('load-chart-btn').disabled = false;
+                document.getElementById('edit-mode-btn').disabled = false;
+                document.getElementById('override-bpm-btn').disabled = false;
+                document.getElementById('offset-minus-btn').disabled = false;
+                document.getElementById('offset-plus-btn').disabled = false;
+                document.getElementById('tap-bpm-btn').disabled = false;
+                document.getElementById('mark-beat-btn').disabled = false;
+                document.getElementById('toggle-onset-btn').disabled = false;
+
+                alert(`✨ 분석 완료!\n\nBPM: ${detectedBPM.toFixed(1)}\nOffset: ${detectedOffset.toFixed(3)}s\n노트: ${editorState.notes.length}개\n난이도: ${editorState.difficulty}\n\n재생 버튼을 눌러 확인하세요!\n※ 박자가 안맞으면 BPM이나 Offset을 수동 조정하세요.`);
+
+            } catch (error) {
+                hideLoading();
+                console.error('Error:', error);
+                alert('오디오 로드 실패: ' + error.message);
+            }
+        }
+
+        // BPM 및 첫 비트 오프셋 자동 감지 + FFT 기반 주파수 분석
+        async function detectBPMAndOffset(audioBuffer) {
+            const sampleRate = audioBuffer.sampleRate;
+            const channelData = audioBuffer.getChannelData(0);
+
+            console.log('Starting advanced BPM detection with FFT analysis...');
+
+            // 1. FFT 기반 Onset Strength Envelope 계산
+            const fftSize = 2048;  // FFT window size (power of 2)
+            const hopSize = Math.floor(fftSize / 2); // 50% overlap
+
+            // 전체 onset + 주파수 대역별 onset + 멜로디 정보
+            const onsetStrengths = [];
+            const onsetTimes = [];
+            const bassOnsets = [];      // 베이스 라인 (40-100Hz) - Task #3
+            const kickOnsets = [];      // 킥드럼 (100-150Hz) - Task #3
+            const snareOnsets = [];     // 스네어 (150-4000Hz)
+            const hihatOnsets = [];     // 하이햇 (4000-12000Hz)
+            const melodyStrengths = []; // 멜로디 (200-2000Hz, spectral flux) - Task #1
+
+            console.log(`Using simplified frequency band analysis with bass separation (Task #3)`);
+
+            // 이전 스펙트럼 저장 (Spectral Flux 계산용)
+            let prevSpectrum = null;
+
+            // 각 window마다 간소화된 주파수 대역 분석 수행
+            // (전체 DFT 대신 필요한 주파수 대역만 계산 - 훨씬 빠름)
+            for (let i = 0; i < channelData.length - fftSize; i += hopSize) {
+                const time = i / sampleRate;
+
+                // 현재 window 추출 및 RMS 기반 대역별 에너지 계산
+                let bassEnergy = 0;   // Task #3: Bass line (very low freq)
+                let kickEnergy = 0;   // Task #3: Kick drum (low freq)
+                let snareEnergy = 0;
+                let hihatEnergy = 0;
+                let melodyEnergy = 0;
+                let zeroCrossings = 0; // Zero-crossing rate for melody pitch detection
+                let prevSample = 0;
+
+                // Task #3: 간소화된 필터뱅크 방식 - Bass와 Kick 분리 + Zero-Crossing for melody
+                for (let j = 0; j < fftSize; j++) {
+                    const sample = channelData[i + j];
+                    const sampleSq = sample * sample;
+
+                    // Zero-crossing detection (멜로디 pitch 변화 감지)
+                    if (j > 0 && prevSample * sample < 0) {
+                        zeroCrossings++;
+                    }
+                    prevSample = sample;
+
+                    // Task #3: 초저주파 에너지 (Bass line: 앞쪽 1/16)
+                    if (j < fftSize / 16) {
+                        bassEnergy += sampleSq;
+                    }
+                    // Task #3: 저주파 에너지 (Kick: 1/16 ~ 1/8)
+                    else if (j < fftSize / 8) {
+                        kickEnergy += sampleSq;
+                    }
+                    // 중주파 에너지 (Snare/Melody: 1/8 ~ 1/2)
+                    else if (j < fftSize / 2) {
+                        snareEnergy += sampleSq;
+                        melodyEnergy += sampleSq * 2.0; // 멜로디 대역
+                    }
+                    // 고주파 에너지 (Hihat: 나머지)
+                    else {
+                        hihatEnergy += sampleSq;
+                    }
+                }
+
+                // Zero-crossing rate를 멜로디 에너지에 반영
+                // 높은 ZCR = 높은 주파수 = 멜로디/보컬 가능성 높음
+                const zcr = zeroCrossings / fftSize;
+                if (zcr > 0.1 && zcr < 0.4) {  // 멜로디 범위의 ZCR (너무 낮으면 Bass, 너무 높으면 노이즈)
+                    melodyEnergy *= (1 + zcr * 5); // ZCR에 비례해서 멜로디 에너지 증폭
+                }
+
+                // Normalize by window size
+                bassEnergy = Math.sqrt(bassEnergy / fftSize);   // Task #3
+                kickEnergy = Math.sqrt(kickEnergy / fftSize);   // Task #3
+                snareEnergy = Math.sqrt(snareEnergy / fftSize);
+                hihatEnergy = Math.sqrt(hihatEnergy / fftSize);
+                melodyEnergy = Math.sqrt(melodyEnergy / fftSize);
+
+                // Onset detection: 이전 프레임과의 차이 계산
+                let onset = 0;
+                let bassOnset = 0;   // Task #3
+                let kickOnset = 0;
+                let snareOnset = 0;
+                let hihatOnset = 0;
+                let melodyOnset = 0;
+
+                if (prevSpectrum !== null) {
+                    // Energy difference (positive only)
+                    const totalEnergy = bassEnergy + kickEnergy + snareEnergy + hihatEnergy + melodyEnergy;
+                    const prevTotalEnergy = prevSpectrum[0] + prevSpectrum[1] + prevSpectrum[2] + prevSpectrum[3] + prevSpectrum[4];
+
+                    onset = Math.max(0, totalEnergy - prevTotalEnergy);
+                    bassOnset = Math.max(0, bassEnergy - prevSpectrum[0]); // Task #3
+                    kickOnset = Math.max(0, kickEnergy - prevSpectrum[1]); // Task #3
+                    snareOnset = Math.max(0, snareEnergy - prevSpectrum[2]);
+                    hihatOnset = Math.max(0, hihatEnergy - prevSpectrum[3]);
+
+                    // Task #1: 멜로디 onset - 에너지 변화가 충분히 클 때만
+                    const melodyDiff = melodyEnergy - prevSpectrum[4];
+                    if (melodyDiff > prevSpectrum[4] * 0.2) {  // 이전 대비 20% 이상 증가
+                        melodyOnset = melodyDiff;
+                    } else {
+                        melodyOnset = 0;  // 작은 변화는 무시
+                    }
+                }
+
+                onsetStrengths.push(onset);
+                bassOnsets.push(bassOnset);   // Task #3
+                kickOnsets.push(kickOnset);
+                snareOnsets.push(snareOnset);
+                hihatOnsets.push(hihatOnset);
+                melodyStrengths.push(melodyOnset); // Task #1
+                onsetTimes.push(time);
+
+                // Store current energies for next iteration (Task #3: 5 bands now)
+                prevSpectrum = [bassEnergy, kickEnergy, snareEnergy, hihatEnergy, melodyEnergy];
+            }
+
+            // 2. Normalize onset strengths
+            const maxOnset = Math.max(...onsetStrengths);
+            const maxBass = Math.max(...bassOnsets);   // Task #3
+            const maxKick = Math.max(...kickOnsets);
+            const maxSnare = Math.max(...snareOnsets);
+            const maxHihat = Math.max(...hihatOnsets);
+            const maxMelody = Math.max(...melodyStrengths);
+
+            const normalizedOnsets = onsetStrengths.map(o => o / maxOnset);
+            const normalizedBass = bassOnsets.map(o => o / maxBass);   // Task #3
+            const normalizedKick = kickOnsets.map(o => o / maxKick);
+            const normalizedSnare = snareOnsets.map(o => o / maxSnare);
+            const normalizedHihat = hihatOnsets.map(o => o / maxHihat);
+            const normalizedMelody = melodyStrengths.map(o => o / maxMelody); // Task #1
+
+            // Calculate onset statistics
+            const strongOnsets = normalizedOnsets.filter(o => o > 0.3).length;
+            const bassCount = normalizedBass.filter(o => o > 0.3).length;   // Task #3
+            const kickCount = normalizedKick.filter(o => o > 0.3).length;
+            const snareCount = normalizedSnare.filter(o => o > 0.3).length;
+            const hihatCount = normalizedHihat.filter(o => o > 0.3).length;
+            const melodyCount = normalizedMelody.filter(o => o > 0.3).length; // Task #1
+
+            console.log(`Calculated ${normalizedOnsets.length} onset frames`);
+            console.log(`Strong onsets (>0.3): ${strongOnsets}`);
+            console.log(`Frequency bands - Bass: ${bassCount}, Kick: ${kickCount}, Snare: ${snareCount}, Hihat: ${hihatCount}, Melody: ${melodyCount}`);
+
+            // 3. Autocorrelation for tempo detection
+            const minBPM = 60;
+            const maxBPM = 200;
+            const minInterval = Math.floor((60 / maxBPM) / (hopSize / sampleRate));
+            const maxInterval = Math.floor((60 / minBPM) / (hopSize / sampleRate));
+
+            let bestCorr = 0;
+            let bestLag = 0;
+
+            // Calculate autocorrelation with normalization
+            for (let lag = minInterval; lag <= maxInterval; lag++) {
+                let corr = 0;
+                let norm = 0;
+
+                for (let i = 0; i < normalizedOnsets.length - lag; i++) {
+                    corr += normalizedOnsets[i] * normalizedOnsets[i + lag];
+                    norm += normalizedOnsets[i] * normalizedOnsets[i];
+                }
+
+                // Normalize correlation
+                if (norm > 0) {
+                    corr = corr / Math.sqrt(norm);
+                }
+
+                if (corr > bestCorr) {
+                    bestCorr = corr;
+                    bestLag = lag;
+                }
+            }
+
+            // 4. Calculate BPM from best lag
+            const beatInterval = bestLag * (hopSize / sampleRate);
+            let detectedBPM = 60 / beatInterval;
+
+            console.log(`Raw BPM: ${detectedBPM.toFixed(1)}, Correlation: ${bestCorr.toFixed(3)}`);
+
+            // 5. BPM adjustment (handle octave errors)
+            // Try multiples and divisions to find the most musical tempo
+            const candidates = [detectedBPM, detectedBPM * 2, detectedBPM / 2, detectedBPM * 3, detectedBPM / 3];
+            let finalBPM = detectedBPM;
+
+            for (const candidate of candidates) {
+                if (candidate >= 80 && candidate <= 180) {
+                    finalBPM = candidate;
+                    break;
+                }
+            }
+
+            // Round to nearest 0.5
+            finalBPM = Math.round(finalBPM * 2) / 2;
+
+            console.log(`Final BPM: ${finalBPM}`);
+
+            // 6. First beat offset detection (improved)
+            // Find the first ANY onset (음악의 실제 시작점) - not just strong ones!
+            const threshold = 0.1; // 10% of max (약한 비트도 감지)
+            let firstBeatIndex = -1;
+
+            for (let i = 0; i < normalizedOnsets.length; i++) {
+                if (normalizedOnsets[i] > threshold) {
+                    firstBeatIndex = i;
+                    break;
+                }
+            }
+
+            const firstBeatTime = firstBeatIndex !== -1 ? onsetTimes[firstBeatIndex] : 0;
+
+            // Align to beat grid
+            const beatDuration = 60 / finalBPM;
+
+            // IMPORTANT: BPM 그리드에 맞춰서 offset 계산
+            // firstBeatTime을 가장 가까운 박자에 정렬
+            const beatPosition = Math.round(firstBeatTime / beatDuration);
+            let offset = beatPosition * beatDuration;
+
+            // 하지만 음악이 아예 처음부터 시작한다면 offset = 0
+            if (firstBeatTime < beatDuration * 2) {
+                offset = 0;
+                console.log(`First beat at ${firstBeatTime.toFixed(3)}s (very early), setting offset to 0`);
+            } else {
+                console.log(`First beat at ${firstBeatTime.toFixed(3)}s, aligned offset: ${offset.toFixed(3)}s`);
+            }
+
+            // 첫 4마디의 강한 비트들을 출력해서 확인
+            console.log('First 4 measures strong beats:');
+            for (let i = 0; i < Math.min(16, normalizedOnsets.length); i++) {
+                if (normalizedOnsets[i] > 0.4) {
+                    const beatPos = (onsetTimes[i] - offset) / beatDuration;
+                    console.log(`  ${onsetTimes[i].toFixed(2)}s (beat ${beatPos.toFixed(2)}) - strength ${normalizedOnsets[i].toFixed(2)}`);
+                }
+            }
+
+            // 7. Music Structure Recognition (Task #2)
+            // 에너지 변화를 분석해서 곡의 구조(Intro/Verse/Chorus)를 감지
+            const musicStructure = detectMusicStructure(normalizedOnsets, onsetTimes, audioBuffer.duration, finalBPM);
+            console.log(`Detected ${musicStructure.length} music sections`);
+
+            return {
+                bpm: finalBPM,
+                offset: offset,
+                confidence: bestCorr,
+                onsets: normalizedOnsets,      // Overall onset strengths
+                onsetTimes: onsetTimes,
+                bassOnsets: normalizedBass,    // Bass line onsets (40-100Hz) - Task #3
+                kickOnsets: normalizedKick,    // Kick drum onsets (100-150Hz) - Task #3
+                snareOnsets: normalizedSnare,  // Snare drum onsets (150-4000Hz)
+                hihatOnsets: normalizedHihat,  // Hi-hat onsets (4000-12000Hz)
+                melodyOnsets: normalizedMelody, // Melody onsets (200-2000Hz) - Task #1
+                musicStructure: musicStructure  // Music structure sections - Task #2
+            };
+        }
+
+        // Task #2: Music Structure Detection
+        // 에너지 레벨 변화를 분석하여 곡의 구조(Intro/Verse/Chorus/Bridge/Outro)를 감지
+        function detectMusicStructure(onsets, onsetTimes, duration, bpm) {
+            const sections = [];
+
+            // 에너지를 일정 시간 단위로 평균내서 분석 (4마디 = 16박자 단위)
+            const beatDuration = 60 / bpm;
+            const sectionDuration = beatDuration * 16; // 4마디
+            const numSections = Math.ceil(duration / sectionDuration);
+
+            console.log(`Analyzing music structure: ${numSections} sections (${sectionDuration.toFixed(1)}s each)`);
+
+            // 각 섹션의 평균 에너지 계산
+            const sectionEnergies = [];
+            for (let i = 0; i < numSections; i++) {
+                const startTime = i * sectionDuration;
+                const endTime = Math.min((i + 1) * sectionDuration, duration);
+
+                // 이 시간 범위의 onset들의 평균 에너지
+                const sectionOnsets = onsets.filter((_, idx) => {
+                    const t = onsetTimes[idx];
+                    return t >= startTime && t < endTime;
+                });
+
+                const avgEnergy = sectionOnsets.length > 0
+                    ? sectionOnsets.reduce((sum, o) => sum + o, 0) / sectionOnsets.length
+                    : 0;
+
+                sectionEnergies.push(avgEnergy);
+            }
+
+            // 전체 곡의 평균/최대 에너지
+            const avgEnergy = sectionEnergies.reduce((sum, e) => sum + e, 0) / sectionEnergies.length;
+            const maxEnergy = Math.max(...sectionEnergies);
+
+            console.log(`Energy stats - Avg: ${avgEnergy.toFixed(3)}, Max: ${maxEnergy.toFixed(3)}`);
+
+            // 각 섹션을 분류
+            for (let i = 0; i < numSections; i++) {
+                const startTime = i * sectionDuration;
+                const endTime = Math.min((i + 1) * sectionDuration, duration);
+                const energy = sectionEnergies[i];
+                const energyRatio = energy / avgEnergy;
+
+                let sectionType = 'Verse';
+                let densityMultiplier = 1.0;
+
+                // 에너지 레벨로 섹션 타입 판단 (디제이맥스 스타일 밀도)
+                if (i === 0 && energyRatio < 0.7) {
+                    // 첫 섹션이 낮은 에너지 → Intro
+                    sectionType = 'Intro';
+                    densityMultiplier = 0.4; // 노트 밀도 40% (더 낮춤)
+                } else if (i === numSections - 1 && energyRatio < 0.7) {
+                    // 마지막 섹션이 낮은 에너지 → Outro
+                    sectionType = 'Outro';
+                    densityMultiplier = 0.5; // 노트 밀도 50% (더 낮춤)
+                } else if (energyRatio > 1.3) {
+                    // 평균보다 30% 높은 에너지 → Chorus (절정)
+                    sectionType = 'Chorus';
+                    densityMultiplier = 1.3; // 노트 밀도 130% (줄임)
+                } else if (energyRatio > 1.1) {
+                    // 평균보다 10% 높은 에너지 → Pre-Chorus
+                    sectionType = 'Pre-Chorus';
+                    densityMultiplier = 1.1; // 노트 밀도 110% (줄임)
+                } else if (energyRatio < 0.8) {
+                    // 평균보다 낮은 에너지 → Break/Bridge
+                    sectionType = 'Break';
+                    densityMultiplier = 0.6; // 노트 밀도 60% (더 낮춤)
+                } else {
+                    // 평균 에너지 → Verse
+                    sectionType = 'Verse';
+                    densityMultiplier = 1.0; // 노트 밀도 100%
+                }
+
+                sections.push({
+                    startTime: startTime,
+                    endTime: endTime,
+                    type: sectionType,
+                    energy: energy,
+                    densityMultiplier: densityMultiplier
+                });
+
+                console.log(`Section ${i}: ${startTime.toFixed(1)}-${endTime.toFixed(1)}s | ${sectionType} | Energy: ${energy.toFixed(3)} (${(energyRatio * 100).toFixed(0)}%) | Density: ${(densityMultiplier * 100).toFixed(0)}%`);
+            }
+
+            return sections;
+        }
+
+        function generateNotes() {
+            editorState.notes = [];
+
+            const beatDuration = 60 / editorState.bpm;
+
+            console.log(`🎯 Pure Onset-Based Generation: BPM ${editorState.bpm}`);
+            console.log(`⚠️ 확률 없음! Onset만 보고 1:1 노트 생성`);
+
+            // 난이도별 Onset threshold만 설정 (확률 제거!)
+            const difficultySettings = {
+                'Easy': {
+                    threshold: 0.30,  // 강한 비트만
+                    description: '강한 비트만'
+                },
+                'Normal': {
+                    threshold: 0.20,  // 중간 비트
+                    description: '중간 비트'
+                },
+                'Hard': {
+                    threshold: 0.15,  // 약한 비트까지 (더 낮춤!)
+                    description: '약한 비트까지'
+                },
+                'Expert': {
+                    threshold: 0.10,  // 매우 약한 비트까지
+                    description: '매우 약한 비트까지'
+                }
+            };
+
+            const settings = difficultySettings[editorState.difficulty];
+            console.log(`Difficulty: ${editorState.difficulty} - ${settings.description}, Threshold: ${settings.threshold}`);
+
+            if (!editorState.onsets || editorState.onsets.length === 0) {
+                console.error('No onset data available!');
+                alert('Onset 데이터가 없습니다. 음원을 다시 로드하세요.');
+                return;
+            }
+
+            let lastLane = 0;  // 레인 교대 패턴용
+            let lastLeftLane = 0;  // 왼손 마지막 레인 (D/F 교대용)
+            let lastRightLane = 3;  // 오른손 마지막 레인 (J/K 교대용)
+            let processedOnsets = 0;
+            let skippedWeak = 0;
+            let skippedDuplicate = 0;
+
+            console.log(`Processing ${editorState.onsets.length} onsets...`);
+
+            // Onset 직접 순회 (BPM 그리드 무시!)
+            for (let i = 0; i < editorState.onsets.length; i++) {
+                const onsetStrength = editorState.onsets[i];
+                const onsetTime = editorState.onsetTimes[i];
+
+                processedOnsets++;
+
+                // 1. Threshold 체크 (난이도별)
+                if (onsetStrength < settings.threshold) {
+                    skippedWeak++;
+                    continue;
+                }
+
+                // 2. 음원 범위 체크
+                if (onsetTime < 0 || onsetTime > editorState.duration) {
+                    continue;
+                }
+
+                // 3. BPM 그리드에 스냅 (가장 가까운 1/16박)
+                const beatPosition = (onsetTime - editorState.offset) / beatDuration;
+                const snapDivisor = 16;
+                const snappedBeat = Math.round(beatPosition * snapDivisor) / snapDivisor;
+                const snappedTime = snappedBeat * beatDuration + editorState.offset;
+
+                // 4. 유효 범위 재확인
+                if (snappedTime < 0 || snappedTime > editorState.duration) {
+                    continue;
+                }
+
+                // 5. 중복 방지 (50ms 이내)
+                const isDuplicate = editorState.notes.some(note =>
+                    Math.abs(note.time - snappedTime) < 0.05
+                );
+                if (isDuplicate) {
+                    skippedDuplicate++;
+                    continue;
+                }
+
+                // 6. 레인 결정 - 드럼 타입 기반 + 좌우 균형
+                let lane = 0;
+                const kickStrength = editorState.kickOnsets[i] || 0;
+                const snareStrength = editorState.snareOnsets[i] || 0;
+                const hihatStrength = editorState.hihatOnsets[i] || 0;
+                const maxDrumStrength = Math.max(kickStrength, snareStrength, hihatStrength);
+
+                let isLeftHand = (lastLane === 0 || lastLane === 1);
+
+                if (kickStrength === maxDrumStrength && kickStrength > 0.15) {
+                    // Kick → 왼손 교대 (D↔F) - 왼손 전용 트래커 사용!
+                    lane = (lastLeftLane === 0) ? 1 : 0;  // D↔F 확실한 교대
+                    lastLeftLane = lane;  // 왼손 마지막 레인 업데이트
+                } else if (snareStrength === maxDrumStrength && snareStrength > 0.15) {
+                    // Snare → 오른손 교대 (J↔K) - 오른손 전용 트래커 사용!
+                    lane = (lastRightLane === 3) ? 4 : 3;  // J↔K 확실한 교대
+                    lastRightLane = lane;  // 오른손 마지막 레인 업데이트
+                } else if (hihatStrength === maxDrumStrength && hihatStrength > 0.15) {
+                    // Hi-hat → 오른손 교대 (J↔K)
+                    lane = (lastRightLane === 3) ? 4 : 3;
+                    lastRightLane = lane;
+                } else {
+                    // 드럼이 명확하지 않으면 좌우 교대 (균형 유지)
+                    if (isLeftHand) {
+                        // 왼손 → 오른손으로
+                        lane = (lastRightLane === 3) ? 4 : 3;
+                        lastRightLane = lane;
+                    } else {
+                        // 오른손 → 왼손으로
+                        lane = (lastLeftLane === 0) ? 1 : 0;
+                        lastLeftLane = lane;
+                    }
+                }
+
+                // 7. 노트 추가 (확률 없이 무조건!)
+                editorState.notes.push({
+                    time: parseFloat(snappedTime.toFixed(3)),
+                    lane: lane
+                });
+
+                lastLane = lane;
+            }
+
+            editorState.notes.sort((a, b) => a.time - b.time);
+
+            console.log(`✅ Generated ${editorState.notes.length} notes`);
+            console.log(`📊 Stats:`);
+            console.log(`   - Processed onsets: ${processedOnsets}`);
+            console.log(`   - Created notes: ${editorState.notes.length}`);
+            console.log(`   - Skipped (too weak): ${skippedWeak}`);
+            console.log(`   - Skipped (duplicate): ${skippedDuplicate}`);
+
+            if (editorState.notes.length > 0) {
+                const firstNote = editorState.notes[0];
+                const lastNote = editorState.notes[editorState.notes.length - 1];
+                console.log(`⏱️ First: ${firstNote.time.toFixed(3)}s, Last: ${lastNote.time.toFixed(3)}s`);
+
+                // 레인 분포 통계
+                const laneCounts = [0, 0, 0, 0, 0];
+                editorState.notes.forEach(note => laneCounts[note.lane]++);
+                const totalNotes = editorState.notes.length;
+                console.log(`🎹 Lane distribution:`);
+                console.log(`   D(0): ${laneCounts[0]} (${(laneCounts[0]/totalNotes*100).toFixed(1)}%)`);
+                console.log(`   F(1): ${laneCounts[1]} (${(laneCounts[1]/totalNotes*100).toFixed(1)}%)`);
+                console.log(`   Space(2): ${laneCounts[2]} (${(laneCounts[2]/totalNotes*100).toFixed(1)}%)`);
+                console.log(`   J(3): ${laneCounts[3]} (${(laneCounts[3]/totalNotes*100).toFixed(1)}%)`);
+                console.log(`   K(4): ${laneCounts[4]} (${(laneCounts[4]/totalNotes*100).toFixed(1)}%)`);
+
+                // NPS (Notes Per Second) 계산
+                const nps = (editorState.notes.length / editorState.duration).toFixed(2);
+                console.log(`📈 Average NPS: ${nps}`);
+            }
+
+            updateStats();
+        }
+
+        function regenerateNotes() {
+            if (!editorState.audioBuffer) {
+                alert('먼저 음원을 로드하세요.');
+                return;
+            }
+
+            if (confirm('노트를 다시 생성하시겠습니까?')) {
+                generateNotes();
+                alert(`🔄 재생성 완료!\n\n노트: ${editorState.notes.length}개\n난이도: ${editorState.difficulty}`);
+            }
+        }
+
+        async function initEditor() {
+            calculateDimensions();
+
+            app = new PIXI.Application();
+            await app.init({
+                width: GAME_WIDTH,
+                height: GAME_HEIGHT,
+                backgroundColor: 0x0a0a0a,
+                antialias: true,
+                resolution: window.devicePixelRatio || 1
+            });
+
+            document.getElementById('editor-canvas').appendChild(app.canvas);
+
+            gameContainer = new PIXI.Container();
+            gridContainer = new PIXI.Container();
+            beatGridContainer = new PIXI.Container();
+            onsetMarkersContainer = new PIXI.Container();
+            notesContainer = new PIXI.Container();
+
+            app.stage.addChild(gameContainer);
+            app.stage.addChild(gridContainer);
+            app.stage.addChild(beatGridContainer);
+            app.stage.addChild(onsetMarkersContainer);
+            app.stage.addChild(notesContainer);
+
+            drawLanes();
+            drawJudgmentLine();
+
+            app.ticker.add(editorLoop);
+
+            window.addEventListener('resize', () => {
+                calculateDimensions();
+                if (app) {
+                    app.renderer.resize(GAME_WIDTH, GAME_HEIGHT);
+                    gameContainer.removeChildren();
+                    gridContainer.removeChildren();
+                    drawLanes();
+                    drawJudgmentLine();
+                }
+            });
+        }
+
+        function drawLanes() {
+            for (let i = 0; i < LANES.length; i++) {
+                const lane = new PIXI.Graphics();
+
+                lane.rect(i * LANE_WIDTH, 0, LANE_WIDTH, GAME_HEIGHT / 2);
+                lane.fill({ color: 0x16213e, alpha: 0.2 });
+
+                lane.rect(i * LANE_WIDTH, GAME_HEIGHT / 2, LANE_WIDTH, GAME_HEIGHT / 2);
+                lane.fill({ color: 0x16213e, alpha: 0.4 });
+
+                lane.moveTo(i * LANE_WIDTH, 0);
+                lane.lineTo(i * LANE_WIDTH, GAME_HEIGHT);
+                lane.stroke({ color: LANES[i].color, width: 2, alpha: 0.5 });
+
+                gameContainer.addChild(lane);
+
+                const keyText = new PIXI.Text({
+                    text: LANES[i].label,
+                    style: {
+                        fontSize: 28,
+                        fill: LANES[i].color,
+                        fontWeight: 'bold',
+                        fontFamily: 'Orbitron'
+                    }
+                });
+                keyText.anchor.set(0.5);
+                keyText.x = i * LANE_WIDTH + LANE_WIDTH / 2;
+                keyText.y = GAME_HEIGHT - 30;
+                gameContainer.addChild(keyText);
+            }
+        }
+
+        function drawJudgmentLine() {
+            const line = new PIXI.Graphics();
+            line.moveTo(0, JUDGMENT_LINE_Y);
+            line.lineTo(GAME_WIDTH, JUDGMENT_LINE_Y);
+            line.stroke({ color: 0xFFFFFF, width: 4 });
+
+            const glow = new PIXI.Graphics();
+            glow.moveTo(0, JUDGMENT_LINE_Y);
+            glow.lineTo(GAME_WIDTH, JUDGMENT_LINE_Y);
+            glow.stroke({ color: 0xFFFFFF, width: 20, alpha: 0.2 });
+
+            gameContainer.addChild(glow);
+            gameContainer.addChild(line);
+        }
+
+        function addNote(laneIndex, time) {
+            const note = {
+                time: parseFloat(time.toFixed(3)),
+                lane: laneIndex
+            };
+
+            editorState.notes.push(note);
+            editorState.notes.sort((a, b) => a.time - b.time);
+            updateStats();
+        }
+
+        function deleteLastNote() {
+            if (editorState.notes.length > 0) {
+                editorState.notes.pop();
+                updateStats();
+            }
+        }
+
+        function showKeyFlash(laneIndex) {
+            const flash = new PIXI.Graphics();
+            flash.rect(laneIndex * LANE_WIDTH, JUDGMENT_LINE_Y - 50, LANE_WIDTH, 100);
+            flash.fill({ color: LANES[laneIndex].color, alpha: 0.6 });
+            gameContainer.addChild(flash);
+
+            setTimeout(() => {
+                gameContainer.removeChild(flash);
+            }, 100);
+        }
+
+        function togglePlayback() {
+            if (editorState.isPlaying) {
+                pausePlayback();
+            } else {
+                startPlayback();
+            }
+        }
+
+        function startPlayback() {
+            if (!editorState.audioBuffer) {
+                alert('먼저 음원을 로드하세요.');
+                return;
+            }
+
+            if (editorState.audioSource) {
+                editorState.audioSource.stop();
+            }
+
+            editorState.audioSource = editorState.audioContext.createBufferSource();
+            editorState.audioSource.buffer = editorState.audioBuffer;
+            editorState.audioSource.connect(editorState.audioContext.destination);
+
+            const offset = editorState.currentTime || 0;
+            editorState.audioSource.start(0, offset);
+            editorState.startTime = editorState.audioContext.currentTime - offset;
+            editorState.isPlaying = true;
+
+            document.getElementById('status').textContent = '재생 중';
+            document.getElementById('play-btn').textContent = '⏸ 일시정지';
+
+            editorState.audioSource.onended = () => {
+                stopPlayback();
+            };
+        }
+
+        function pausePlayback() {
+            if (editorState.audioSource) {
+                editorState.audioSource.stop();
+                editorState.audioSource = null;
+            }
+            editorState.isPlaying = false;
+            document.getElementById('status').textContent = '일시정지';
+            document.getElementById('play-btn').textContent = '▶ 재생';
+        }
+
+        function stopPlayback() {
+            if (editorState.audioSource) {
+                editorState.audioSource.stop();
+                editorState.audioSource = null;
+            }
+            editorState.isPlaying = false;
+            editorState.currentTime = 0;
+            document.getElementById('status').textContent = '정지';
+            document.getElementById('play-btn').textContent = '▶ 재생';
+        }
+
+        function editorLoop(ticker) {
+            if (editorState.isPlaying && editorState.audioContext) {
+                editorState.currentTime = editorState.audioContext.currentTime - editorState.startTime;
+                document.getElementById('current-time').textContent = editorState.currentTime.toFixed(2) + 's';
+
+                if (editorState.bpm > 0) {
+                    const currentBeat = Math.floor((editorState.currentTime - editorState.offset) / (60 / editorState.bpm)) + 1;
+                    document.getElementById('current-beat').textContent = currentBeat;
+                }
+            }
+
+            // Draw beat grid lines
+            beatGridContainer.removeChildren();
+            if (editorState.bpm > 0) {
+                const beatDuration = 60 / editorState.bpm;
+                const NOTE_SPEED = 200;
+
+                // Draw beat lines within visible range
+                const visibleTime = GAME_HEIGHT / NOTE_SPEED;
+                const startBeat = Math.floor((editorState.currentTime - editorState.offset) / beatDuration);
+                const endBeat = Math.ceil((editorState.currentTime + visibleTime - editorState.offset) / beatDuration);
+
+                for (let beat = startBeat; beat <= endBeat; beat++) {
+                    const beatTime = beat * beatDuration + editorState.offset;
+                    const timeDiff = beatTime - editorState.currentTime;
+                    const lineY = JUDGMENT_LINE_Y - timeDiff * NOTE_SPEED;
+
+                    if (lineY > -10 && lineY < GAME_HEIGHT + 10) {
+                        const line = new PIXI.Graphics();
+
+                        // Different colors for different beat types
+                        if (beat % 4 === 0) {
+                            // Measure line (white, thick)
+                            line.moveTo(0, lineY);
+                            line.lineTo(GAME_WIDTH, lineY);
+                            line.stroke({ color: 0xFFFFFF, width: 2, alpha: 0.4 });
+                        } else {
+                            // Regular beat line (gray, thin)
+                            line.moveTo(0, lineY);
+                            line.lineTo(GAME_WIDTH, lineY);
+                            line.stroke({ color: 0x888888, width: 1, alpha: 0.2 });
+                        }
+
+                        beatGridContainer.addChild(line);
+                    }
+                }
+            }
+
+            // Draw onset markers if enabled
+            onsetMarkersContainer.removeChildren();
+            if (editorState.showOnsets && editorState.onsets && editorState.onsets.length > 0) {
+                const NOTE_SPEED = 200;
+                const visibleTime = GAME_HEIGHT / NOTE_SPEED;
+
+                // Get difficulty threshold to show which onsets become notes
+                const difficultyThresholds = {
+                    'Easy': 0.6,
+                    'Normal': 0.45,
+                    'Hard': 0.35,
+                    'Expert': 0.25
+                };
+                const threshold = difficultyThresholds[editorState.difficulty] || 0.35;
+
+                for (let i = 0; i < editorState.onsets.length; i++) {
+                    const onsetTime = editorState.onsetTimes[i];
+                    const onsetStrength = editorState.onsets[i];
+                    const timeDiff = onsetTime - editorState.currentTime;
+
+                    // Only draw onsets in visible range
+                    if (Math.abs(timeDiff) > visibleTime) continue;
+
+                    const lineY = JUDGMENT_LINE_Y - timeDiff * NOTE_SPEED;
+
+                    if (lineY > -10 && lineY < GAME_HEIGHT + 10) {
+                        const line = new PIXI.Graphics();
+
+                        // Color based on onset strength
+                        let color, alpha, width;
+                        if (onsetStrength >= threshold) {
+                            // Strong onset (becomes a note) - bright cyan
+                            color = 0x00FFFF;
+                            alpha = 0.8;
+                            width = 3;
+                        } else if (onsetStrength >= threshold * 0.7) {
+                            // Medium onset - yellow
+                            color = 0xFFFF00;
+                            alpha = 0.5;
+                            width = 2;
+                        } else if (onsetStrength >= threshold * 0.4) {
+                            // Weak onset - orange
+                            color = 0xFFA500;
+                            alpha = 0.3;
+                            width = 1;
+                        } else {
+                            // Very weak - skip to reduce clutter
+                            continue;
+                        }
+
+                        line.moveTo(0, lineY);
+                        line.lineTo(GAME_WIDTH, lineY);
+                        line.stroke({ color: color, width: width, alpha: alpha });
+
+                        // Add drum type indicator on the right
+                        if (onsetStrength >= threshold) {
+                            const kickStrength = editorState.kickOnsets[i] || 0;
+                            const snareStrength = editorState.snareOnsets[i] || 0;
+                            const hihatStrength = editorState.hihatOnsets[i] || 0;
+                            const maxDrumStrength = Math.max(kickStrength, snareStrength, hihatStrength);
+
+                            let drumIndicator = '';
+                            let indicatorColor = 0xFFFFFF;
+                            if (kickStrength === maxDrumStrength && maxDrumStrength > 0.2) {
+                                drumIndicator = 'K';
+                                indicatorColor = 0xFF6B6B;
+                            } else if (snareStrength === maxDrumStrength && maxDrumStrength > 0.2) {
+                                drumIndicator = 'S';
+                                indicatorColor = 0x4ECDC4;
+                            } else if (hihatStrength === maxDrumStrength && maxDrumStrength > 0.2) {
+                                drumIndicator = 'H';
+                                indicatorColor = 0xFFE66D;
+                            }
+
+                            if (drumIndicator) {
+                                const text = new PIXI.Text({
+                                    text: drumIndicator,
+                                    style: {
+                                        fontSize: 12,
+                                        fill: indicatorColor,
+                                        fontWeight: 'bold',
+                                        fontFamily: 'Orbitron'
+                                    }
+                                });
+                                text.anchor.set(0, 0.5);
+                                text.x = GAME_WIDTH - 20;
+                                text.y = lineY;
+                                onsetMarkersContainer.addChild(text);
+                            }
+                        }
+
+                        onsetMarkersContainer.addChild(line);
+                    }
+                }
+            }
+
+            notesContainer.removeChildren();
+
+            const NOTE_HEIGHT = 20;
+            const NOTE_SPEED = 200;
+
+            for (let i = 0; i < editorState.notes.length; i++) {
+                const note = editorState.notes[i];
+                const timeDiff = note.time - editorState.currentTime;
+                const noteY = JUDGMENT_LINE_Y - timeDiff * NOTE_SPEED;
+
+                if (noteY > -50 && noteY < GAME_HEIGHT + 50) {
+                    const noteSprite = new PIXI.Graphics();
+                    noteSprite.roundRect(0, 0, LANE_WIDTH - 10, NOTE_HEIGHT, 8);
+
+                    let noteColor = LANES[note.lane].color;
+
+                    // 선택된 노트는 밝게 표시
+                    const isSelected = editorState.selectedNotes.has(i);
+                    const alpha = isSelected ? 1.0 : 0.9;
+                    noteSprite.fill({ color: noteColor, alpha: alpha });
+
+                    noteSprite.roundRect(0, 0, LANE_WIDTH - 10, NOTE_HEIGHT, 8);
+
+                    // 선택된 노트는 노란색 테두리
+                    const strokeColor = isSelected ? 0xFFFF00 : 0xFFFFFF;
+                    const strokeWidth = isSelected ? 4 : 2;
+                    noteSprite.stroke({ color: strokeColor, width: strokeWidth, alpha: isSelected ? 1.0 : 0.5 });
+
+                    noteSprite.x = note.lane * LANE_WIDTH + 5;
+                    noteSprite.y = noteY - NOTE_HEIGHT / 2;
+
+                    // 편집 모드에서 클릭 가능하도록 설정
+                    if (editorState.editMode) {
+                        noteSprite.interactive = true;
+                        noteSprite.cursor = 'pointer';
+                        noteSprite.eventMode = 'static';
+
+                        noteSprite.on('pointerdown', (event) => {
+                            if (editorState.selectedNotes.has(i)) {
+                                editorState.selectedNotes.delete(i);
+                                console.log(`❌ 노트 선택 해제: ${i} (시간: ${note.time.toFixed(3)}s, 레인: ${note.lane})`);
+                            } else {
+                                editorState.selectedNotes.add(i);
+                                console.log(`✅ 노트 선택: ${i} (시간: ${note.time.toFixed(3)}s, 레인: ${note.lane})`);
+                            }
+                            console.log(`   총 선택된 노트: ${editorState.selectedNotes.size}개`);
+                        });
+                    }
+
+                    notesContainer.addChild(noteSprite);
+                }
+            }
+
+            updateMinimap();
+        }
+
+        function updateStats() {
+            document.getElementById('note-count').textContent = editorState.notes.length;
+
+            if (editorState.duration > 0) {
+                const nps = (editorState.notes.length / editorState.duration).toFixed(1);
+                document.getElementById('nps-display').textContent = nps;
+            }
+
+            updateDensityGraph();
+        }
+
+        function updateDensityGraph() {
+            const canvas = document.getElementById('density-graph');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (editorState.duration === 0 || editorState.notes.length === 0) return;
+
+            const windowSize = 1;
+            const windows = Math.ceil(editorState.duration / windowSize);
+            const densities = [];
+
+            for (let i = 0; i < windows; i++) {
+                const start = i * windowSize;
+                const end = (i + 1) * windowSize;
+                const count = editorState.notes.filter(n => n.time >= start && n.time < end).length;
+                densities.push(count);
+            }
+
+            const maxDensity = Math.max(...densities, 1);
+
+            ctx.fillStyle = '#667eea';
+            densities.forEach((density, i) => {
+                const x = (i / windows) * canvas.width;
+                const width = canvas.width / windows;
+                const height = (density / maxDensity) * canvas.height;
+                const y = canvas.height - height;
+
+                ctx.fillRect(x, y, width, height);
+            });
+
+            if (editorState.duration > 0) {
+                const x = (editorState.currentTime / editorState.duration) * canvas.width;
+                ctx.strokeStyle = '#FF6B6B';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+        }
+
+        function updateMinimap() {
+            const canvas = document.getElementById('minimap');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (editorState.duration === 0) return;
+
+            editorState.notes.forEach(note => {
+                const x = (note.time / editorState.duration) * canvas.width;
+                const y = (note.lane / LANES.length) * canvas.height;
+                const width = Math.max(2, canvas.width / 100);
+                const height = canvas.height / LANES.length;
+
+                let color = `#${LANES[note.lane].color.toString(16).padStart(6, '0')}`;
+
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y, width, height);
+            });
+
+            const x = (editorState.currentTime / editorState.duration) * canvas.width;
+            ctx.strokeStyle = '#FF6B6B';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+
+        function saveChart() {
+            const title = editorState.title || 'Untitled';
+            const bpm = editorState.bpm;
+            const difficulty = editorState.difficulty;
+
+            const chartData = {
+                title,
+                bpm,
+                offset: editorState.offset,
+                difficulty,
+                duration: editorState.duration,
+                lanes: LANES.length,
+                notes: editorState.notes,
+                audioFileName: editorState.audioFileName,  // 오디오 파일 이름 저장
+                metadata: {
+                    nps: (editorState.notes.length / editorState.duration).toFixed(2),
+                    noteCount: editorState.notes.length,
+                    createdAt: new Date().toISOString(),
+                    editor: 'BEAT MASTER Auto'
+                }
+            };
+
+            const dataStr = JSON.stringify(chartData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title.replace(/[^a-z0-9]/gi, '_')}_${difficulty}_chart.json`;
+            link.click();
+
+            URL.revokeObjectURL(url);
+            alert('차트가 저장되었습니다!');
+        }
+
+        function loadChart() {
+            const input = document.getElementById('load-chart-input');
+            const file = input.files[0];
+
+            if (!file) {
+                alert('파일을 선택해주세요.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const chartData = JSON.parse(e.target.result);
+
+                    // 차트 데이터 로드
+                    editorState.notes = chartData.notes || [];
+                    editorState.bpm = chartData.bpm || 120;
+                    editorState.offset = chartData.offset || 0;
+                    editorState.title = chartData.title || 'Untitled';
+                    editorState.difficulty = chartData.difficulty || 'Hard';
+                    editorState.duration = chartData.duration || 0;
+                    editorState.audioFileName = chartData.audioFileName || '';
+
+                    // UI 업데이트
+                    document.getElementById('bpm-input').value = editorState.bpm;
+                    document.getElementById('offset-input').value = editorState.offset;
+                    document.getElementById('title-input').value = editorState.title;
+                    document.getElementById('difficulty-select').value = editorState.difficulty;
+
+                    // 노트 재렌더링
+                    updateStats();
+
+                    // 오디오가 로드되어 있으면 화면 업데이트
+                    if (editorState.audioBuffer) {
+                        render();
+                    }
+
+                    alert(`차트 로드 완료!\n노트: ${editorState.notes.length}개\n${chartData.audioFileName ? '오디오 파일: ' + chartData.audioFileName : '오디오 파일을 별도로 로드해주세요.'}`);
+
+                    // 입력 초기화
+                    input.value = '';
+                } catch (error) {
+                    console.error('차트 로드 실패:', error);
+                    alert('차트 파일을 읽는데 실패했습니다.');
+                }
+            };
+
+            reader.readAsText(file);
+        }
+
+        function toggleEditMode() {
+            editorState.editMode = !editorState.editMode;
+            const btn = document.getElementById('edit-mode-btn');
+            const statusText = document.getElementById('edit-mode-status');
+            const deleteBtn = document.getElementById('delete-note-btn');
+
+            if (editorState.editMode) {
+                btn.textContent = '✏️ 편집중';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-success');
+                statusText.textContent = '편집모드 (노트 클릭)';
+                statusText.style.color = '#38ef7d';
+                deleteBtn.disabled = false;
+                console.log('✏️ 편집 모드 활성화: 노트를 클릭하여 선택하세요');
+            } else {
+                btn.textContent = '✏️ 편집모드';
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-primary');
+                statusText.textContent = '일반모드';
+                statusText.style.color = '#aaa';
+                deleteBtn.disabled = true;
+                editorState.selectedNotes.clear();
+                console.log('✏️ 일반 모드로 전환');
+            }
+        }
+
+        function deleteSelectedNotes() {
+            if (editorState.selectedNotes.size === 0) {
+                alert('삭제할 노트를 선택해주세요.');
+                return;
+            }
+
+            const count = editorState.selectedNotes.size;
+            if (!confirm(`선택한 ${count}개의 노트를 삭제하시겠습니까?`)) {
+                return;
+            }
+
+            // 선택된 인덱스를 배열로 변환하고 내림차순 정렬 (뒤에서부터 삭제)
+            const selectedIndices = Array.from(editorState.selectedNotes).sort((a, b) => b - a);
+
+            for (const index of selectedIndices) {
+                editorState.notes.splice(index, 1);
+            }
+
+            editorState.selectedNotes.clear();
+            updateStats();
+            render();
+
+            console.log(`🗑️ ${count}개의 노트 삭제됨. 남은 노트: ${editorState.notes.length}개`);
+            alert(`${count}개의 노트가 삭제되었습니다.`);
+        }
+
+        function getNoteAtPosition(x, y) {
+            // 화면 좌표를 게임 좌표로 변환
+            const lane = Math.floor(x / LANE_WIDTH);
+            if (lane < 0 || lane >= LANES.length) return -1;
+
+            // 현재 시간 기준으로 노트 찾기
+            const clickTime = editorState.currentTime + (JUDGMENT_LINE_Y - y) / (GAME_HEIGHT * 0.8);
+
+            // 클릭 위치에서 가장 가까운 노트 찾기 (0.5초 범위 내)
+            let closestIndex = -1;
+            let closestDistance = 0.5;  // 최대 0.5초 범위
+
+            for (let i = 0; i < editorState.notes.length; i++) {
+                const note = editorState.notes[i];
+                if (note.lane === lane) {
+                    const distance = Math.abs(note.time - clickTime);
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestIndex = i;
+                    }
+                }
+            }
+
+            return closestIndex;
+        }
+
+        function moveSelectedNotesToLane(targetLane) {
+            if (editorState.selectedNotes.size === 0) return;
+
+            const selectedIndices = Array.from(editorState.selectedNotes);
+            for (const index of selectedIndices) {
+                if (editorState.notes[index]) {
+                    editorState.notes[index].lane = targetLane;
+                }
+            }
+
+            updateStats();
+            console.log(`🔄 ${selectedIndices.length}개 노트를 레인 ${targetLane}(${LANES[targetLane].label})로 이동`);
+        }
+
+        function adjustSelectedNotesTiming(delta) {
+            if (editorState.selectedNotes.size === 0) return;
+
+            const selectedIndices = Array.from(editorState.selectedNotes);
+            for (const index of selectedIndices) {
+                if (editorState.notes[index]) {
+                    editorState.notes[index].time += delta;
+                    // 최소 0초 제한
+                    if (editorState.notes[index].time < 0) {
+                        editorState.notes[index].time = 0;
+                    }
+                }
+            }
+
+            // 노트를 시간순으로 재정렬
+            editorState.notes.sort((a, b) => a.time - b.time);
+
+            updateStats();
+            console.log(`⏱️ ${selectedIndices.length}개 노트 타이밍 조정: ${delta > 0 ? '+' : ''}${(delta * 1000).toFixed(0)}ms`);
+        }
+    </script>
+</body>
+</html>
