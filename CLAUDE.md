@@ -9,12 +9,22 @@ BookJam is a DJMAX-style rhythm game with separate editor and player application
 ## Architecture
 
 ### File Structure
-The project consists of three main HTML files:
-- **`rhythm-game-editor.html`**: Chart editor for creating and editing note patterns
+The project consists of three main HTML files plus a landing page:
+- **`index.html`**: GitHub Pages landing page with navigation to editor/player
+- **`rhythm-game-editor-auto.html`**: AUTO editor with BPM+Offset auto-detection (recommended)
 - **`rhythm-game-player.html`**: Game player for playing created charts
-- **`rhythm-game.html`**: Legacy all-in-one version with auto-generation
+- **`rhythm-game-editor-auto.html`**: Legacy editor (kept for reference)
 
 Each file is self-contained with embedded CSS and JavaScript, allowing direct browser execution without build tools or servers.
+
+### Multiple Editor Versions
+The project has evolved through several editor iterations (see README.md for full history):
+- **AUTO editor** (rhythm-game-editor-auto.html): Latest, with automatic BPM/offset detection and frequency-based lane mapping
+- **FINAL editor**: BPM grid-based with manual control
+- **Pro v2 editor**: Improved beat detection with sensitivity controls
+- **Pro editor**: Advanced charting with Beat Snap Divisor support
+
+Users should start with the AUTO editor for easiest experience.
 
 ### Core Technologies
 - **PixiJS v8.12.0**: 2D WebGL rendering engine (loaded via CDN)
@@ -57,12 +67,23 @@ Timing windows for hit accuracy:
 
 1. **File Loading**: User selects MP3 file via file input or drag-and-drop
 2. **Decoding**: Web Audio API `decodeAudioData()` converts to audio buffer
-3. **BPM Detection**:
+3. **BPM Detection** (AUTO editor):
    - OfflineAudioContext processes audio through lowpass filter (150Hz)
-   - Peak detection identifies beats
-   - Average interval calculation determines BPM
-4. **Note Generation**: Creates note objects based on BPM and difficulty multiplier
-5. **Playback**: BufferSource plays audio with precise timing for note synchronization
+   - Peak detection identifies beats (threshold: 0.9, min distance: 200ms)
+   - Average interval calculation determines BPM (60 / avgInterval)
+   - BPM range: 60-240 BPM
+4. **Offset Detection** (AUTO editor):
+   - First significant beat time becomes offset
+   - Used to align note grid with actual music beats
+5. **Note Generation**:
+   - **Multi-band Onset Detection**: Splits audio into 3 frequency bands (kick: 20-150Hz, snare: 150-4kHz, hi-hat: 4-20kHz)
+   - **Spectral Flux**: Calculates energy changes to detect note onsets
+   - **Adaptive Thresholding**: Local average-based peak detection
+   - **Lane Mapping**: Frequency band determines lane assignment (kick→left, snare→center, hi-hat→right)
+   - **Beat Grid Snapping**: Aligns detected onsets to BPM grid for consistency
+6. **Playback**: BufferSource plays audio with precise timing for note synchronization
+
+For detailed algorithm documentation, see BEAT_DETECTION.md and NOTE_GENERATION.md.
 
 ### PixiJS Rendering Architecture
 
@@ -117,15 +138,44 @@ Both systems trigger the same `handleKeyPress(laneIndex)` function for consisten
 
 ## Development Workflow
 
-### Editor Workflow
-1. Open `rhythm-game-editor.html` in browser
-2. Load MP3 audio file
-3. Set BPM (or use auto-detect)
-4. Play audio and press keys (D, F, Space, J, K) to add notes at current time
-5. Save as JSON chart file
+### Quick Start (Recommended)
+1. Open `index.html` in browser or visit GitHub Pages: https://puregramer.github.io/bookjam/
+2. Click "Chart Editor" to create charts or "Game Player" to play existing ones
+
+### Editor AUTO Workflow (Easiest)
+1. Open `rhythm-game-editor-auto.html` in browser
+2. Select difficulty (Easy/Normal/Hard/Expert) before loading audio
+3. Load MP3 audio file
+4. Wait for automatic analysis (BPM + Offset + Note generation)
+5. Review generated notes with beat grid visualization
+6. Adjust BPM/Offset if needed (notes regenerate automatically)
+7. Manually add/remove notes during playback (D, F, Space, J, K keys)
+8. Save as JSON chart file
 
 ```bash
-open rhythm-game-editor.html
+open rhythm-game-editor-auto.html
+```
+
+### Editor FINAL Workflow (Manual Control)
+1. Open rhythm-game-editor-final.html
+2. Load MP3 file
+3. Manually input BPM (required!)
+4. Set offset if needed (default: 0)
+5. Choose generation mode (Simple/Kick Only/Kick+Snare/Full Drums)
+6. Adjust density slider (10-100%)
+7. Click "Auto Generate"
+8. Save chart
+
+### Testing Local Files
+```bash
+# Open editor
+open rhythm-game-editor-auto.html
+
+# Open player
+open rhythm-game-player.html
+
+# Open landing page
+open index.html
 ```
 
 ### Player Workflow
@@ -150,25 +200,65 @@ JSON structure for saved charts:
 {
   "title": "Song Title",
   "bpm": 120,
+  "offset": 0.123,
+  "difficulty": "Hard",
   "duration": 180.5,
   "lanes": 5,
   "notes": [
     { "time": 1.0, "lane": 0 },
     { "time": 1.5, "lane": 2 }
   ],
-  "createdAt": "2025-10-28T..."
+  "metadata": {
+    "nps": "3.50",
+    "noteCount": 630,
+    "createdAt": "2025-10-28T...",
+    "editor": "BEAT MASTER Auto"
+  }
 }
 ```
 
-- `time`: When note reaches judgment line (seconds)
-- `lane`: Lane index 0-4 (D, F, Space, J, K)
+- `title`: Song title
+- `bpm`: Beats per minute
+- `offset`: First beat offset in seconds (auto-detected in AUTO editor)
+- `difficulty`: Easy/Normal/Hard/Expert
+- `duration`: Song length in seconds
+- `lanes`: Number of lanes (always 5)
+- `notes`: Array of note objects
+  - `time`: When note reaches judgment line (seconds, includes offset)
+  - `lane`: Lane index 0-4 (D, F, Space, J, K)
+- `metadata`: Additional chart information
+  - `nps`: Notes per second (difficulty metric)
+  - `noteCount`: Total number of notes
+  - `editor`: Which editor was used
+  - `createdAt`: ISO timestamp
+
+**Important**: The player automatically loads the offset from the chart file for perfect timing synchronization.
 
 ### Debugging
-Check browser console for:
+Check browser console (F12) for:
 - Audio loading errors
 - PixiJS initialization issues
-- Note generation statistics (notes array length)
+- Note generation statistics:
+  - Total beats detected
+  - Frequency band distribution (kick/snare/hi-hat counts)
+  - Final note count
+  - NPS (Notes Per Second)
 - Chart file validation errors
+- BPM detection results
+- Offset values
+
+**Common Console Messages (AUTO editor)**:
+```
+🎵 Audio loaded: 3:24 duration
+🎯 BPM detected: 135 BPM
+📍 Offset: 0.234s
+🎼 Generating notes for difficulty: Hard
+✅ Total beats: 487
+   - Kick: 145 (low frequency)
+   - Snare: 198 (mid frequency)
+   - Hi-hat: 144 (high frequency)
+📊 Generated 631 notes (NPS: 3.12)
+```
 
 ## Design System
 
@@ -183,3 +273,40 @@ Check browser console for:
 - Touch buttons sized at 15% screen height minimum
 - All UI elements use responsive `clamp()` sizing
 - Maximum game width of 1200px on large screens
+
+## Chart Design Philosophy
+
+When creating or modifying charts, follow these principles from CHARTING_METHODOLOGY.md:
+
+### Core Principles
+1. **Musicality**: Notes should reflect actual sounds in the music (drums, melody, vocals)
+2. **Playability**: Hand movements should feel natural and comfortable
+3. **Readability**: Players should be able to see and react to notes clearly
+
+### Lane Assignment Strategy
+- **Lanes 0-1 (D, F)**: Kick drum and bass (low frequency, 20-150Hz)
+- **Lane 2 (Space)**: Melody, vocals, important accents (center focus)
+- **Lanes 3-4 (J, K)**: Snare, hi-hat, cymbals (mid-high frequency, 150Hz+)
+
+### Difficulty Guidelines
+- **Easy**: 1-2 NPS, single notes only, 1/1 or 1/2 beat divisions
+- **Normal**: 2-4 NPS, occasional 2-note chords, 1/2 and 1/4 beats
+- **Hard**: 4-6 NPS, frequent chords, 1/4 and occasional 1/8 beats
+- **Expert**: 6-10+ NPS, complex patterns, 1/8 and 1/16 beats
+
+### Pattern Types
+- **Single Notes**: Basic taps for individual sounds
+- **Chords**: 2-3 simultaneous notes for accents or multiple instruments
+- **Streams**: Fast consecutive notes (1/8 or 1/16 divisions)
+- **Jacks**: Same lane repeated (use sparingly, physically demanding)
+
+### BPM and Timing
+- Use `audioContext.currentTime` for precise timing, not `Date.now()`
+- Beat interval formula: `60 / BPM` seconds
+- Common BPM ranges:
+  - Ballad: 60-80
+  - Pop: 100-130
+  - Dance/EDM: 120-150
+  - Drum & Bass: 160-180+
+
+For comprehensive charting guidelines, see CHARTING_METHODOLOGY.md (1800+ lines of detailed methodology).
