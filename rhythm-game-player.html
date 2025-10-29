@@ -303,10 +303,177 @@
                 opacity: 0.6;
             }
         }
+
+        /* Game Layout with Lyrics Sidebar */
+        #game-layout {
+            display: none; /* Hidden until game starts */
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Desktop/Tablet Landscape Layout */
+        @media (min-width: 769px) {
+            #game-layout {
+                display: flex;
+                flex-direction: row;
+            }
+
+            #game-area {
+                flex: 0 0 65%;
+                position: relative;
+            }
+
+            #lyrics-sidebar {
+                flex: 0 0 35%;
+                display: flex !important;
+                flex-direction: column;
+                background: linear-gradient(180deg,
+                    rgba(255, 229, 241, 0.95) 0%,
+                    rgba(255, 246, 181, 0.95) 25%,
+                    rgba(199, 240, 219, 0.95) 50%,
+                    rgba(212, 197, 249, 0.95) 75%,
+                    rgba(255, 224, 236, 0.95) 100%);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                padding: 20px;
+                overflow-y: auto;
+                box-shadow: -5px 0 30px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        /* Mobile/Small Screen Layout */
+        @media (max-width: 768px) {
+            #game-layout {
+                display: block;
+            }
+
+            #game-area {
+                width: 100%;
+                height: 100%;
+                position: relative;
+            }
+
+            #lyrics-sidebar {
+                display: none !important; /* Hide on mobile */
+            }
+
+            #lyrics-overlay {
+                display: block !important;
+                position: fixed;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 1000;
+                background: rgba(255, 255, 255, 0.9);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                padding: 10px 20px;
+                border-radius: 20px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+                min-width: 200px;
+                max-width: 90vw;
+                text-align: center;
+            }
+        }
+
+        @media (min-width: 769px) {
+            #lyrics-overlay {
+                display: none !important;
+            }
+        }
+
+        /* Lyrics Sidebar Styles */
+        #lyrics-sidebar {
+            display: none;
+        }
+
+        .lyrics-thumbnail {
+            width: 100%;
+            max-width: 300px;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 20px;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            border: 5px solid white;
+        }
+
+        .lyrics-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px 0;
+        }
+
+        .lyric-line {
+            font-family: 'Fredoka', 'Noto Sans KR', sans-serif;
+            font-size: clamp(16px, 2.5vw, 24px);
+            font-weight: 600;
+            text-align: center;
+            padding: 10px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            line-height: 1.5;
+        }
+
+        .lyric-line.previous {
+            color: rgba(150, 150, 150, 0.6);
+            font-size: clamp(14px, 2vw, 18px);
+            transform: scale(0.9);
+        }
+
+        .lyric-line.current {
+            color: #FF6B9D;
+            font-size: clamp(20px, 3vw, 32px);
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 5px 25px rgba(255, 107, 157, 0.3);
+            transform: scale(1.1);
+            animation: lyricPulse 1s ease-in-out infinite;
+        }
+
+        .lyric-line.next {
+            color: rgba(100, 100, 100, 0.5);
+            font-size: clamp(14px, 2vw, 18px);
+            transform: scale(0.9);
+        }
+
+        @keyframes lyricPulse {
+            0%, 100% {
+                transform: scale(1.1);
+            }
+            50% {
+                transform: scale(1.15);
+            }
+        }
+
+        /* Mobile Overlay Lyrics */
+        #lyrics-overlay {
+            display: none;
+        }
+
+        #lyrics-overlay .lyric-line {
+            margin: 0;
+            padding: 5px 10px;
+        }
+
+        #lyrics-overlay .lyric-line.current {
+            font-size: clamp(16px, 4vw, 20px);
+            color: #FF6B9D;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
     <div id="particles"></div>
+
+    <!-- Mobile Lyrics Overlay -->
+    <div id="lyrics-overlay">
+        <div class="lyric-line current" id="mobile-lyric"></div>
+    </div>
 
     <div id="game-container">
         <div id="menu">
@@ -328,6 +495,15 @@
             </div>
 
             <button class="start-btn" id="start-btn" disabled>게임 시작!</button>
+        </div>
+    </div>
+
+    <!-- Game Layout with Lyrics -->
+    <div id="game-layout">
+        <div id="game-area"></div>
+        <div id="lyrics-sidebar">
+            <img class="lyrics-thumbnail" id="lyrics-thumb" src="" alt="Album Art">
+            <div class="lyrics-container" id="lyrics-content"></div>
         </div>
     </div>
 
@@ -429,11 +605,17 @@
         };
 
         let GAME_WIDTH, GAME_HEIGHT, LANE_WIDTH, NOTE_HEIGHT, NOTE_SPEED, JUDGMENT_LINE_Y, BUTTON_HEIGHT;
+        let lyricsData = [];
+        let currentLyricIndex = -1;
 
         function calculateDimensions() {
-            GAME_WIDTH = Math.min(window.innerWidth, 1200);
+            // Desktop/tablet: game area is 65% of screen width
+            // Mobile: full width
+            const isDesktop = window.innerWidth > 768;
+            const availableWidth = isDesktop ? window.innerWidth * 0.65 : window.innerWidth;
+            GAME_WIDTH = Math.min(availableWidth, 1200);
+
             // 실제 보이는 뷰포트 높이 사용 (모바일 주소창 제외)
-            // visualViewport를 우선 사용하고 없으면 innerHeight 사용
             const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
             GAME_HEIGHT = viewportHeight;
             LANE_WIDTH = GAME_WIDTH / LANES.length;
@@ -597,8 +779,16 @@
                 resolution: window.devicePixelRatio || 1
             });
 
-            document.getElementById('game-container').innerHTML = '';
-            document.getElementById('game-container').appendChild(app.canvas);
+            // Hide menu and setup game layout
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('game-container').style.display = 'none';
+
+            const gameLayout = document.getElementById('game-layout');
+            gameLayout.style.display = window.innerWidth > 768 ? 'flex' : 'block';
+
+            const gameArea = document.getElementById('game-area');
+            gameArea.innerHTML = '';
+            gameArea.appendChild(app.canvas);
 
             gameContainer = new PIXI.Container();
             beatGridContainer = new PIXI.Container();
@@ -617,6 +807,7 @@
             createUI();
             setupInput();
             createTouchButtons();
+            setupLyrics();
 
             app.ticker.add(gameLoop);
             playAudio();
@@ -1143,10 +1334,88 @@
             };
         }
 
+        function setupLyrics() {
+            // Load lyrics from chart data
+            if (gameState.chartData && gameState.chartData.lyrics) {
+                lyricsData = gameState.chartData.lyrics;
+
+                // Setup thumbnail
+                if (gameState.chartData.thumbnail) {
+                    const thumb = document.getElementById('lyrics-thumb');
+                    thumb.src = gameState.chartData.thumbnail;
+                    thumb.style.display = 'block';
+                } else {
+                    document.getElementById('lyrics-thumb').style.display = 'none';
+                }
+
+                // Initialize lyrics display
+                updateLyrics(0);
+            }
+        }
+
+        function updateLyrics(currentTime) {
+            if (!lyricsData || lyricsData.length === 0) return;
+
+            // Find current lyric index
+            let newIndex = -1;
+            for (let i = 0; i < lyricsData.length; i++) {
+                if (currentTime >= lyricsData[i].time) {
+                    newIndex = i;
+                } else {
+                    break;
+                }
+            }
+
+            // Only update if index changed
+            if (newIndex !== currentLyricIndex) {
+                currentLyricIndex = newIndex;
+                renderLyrics();
+            }
+        }
+
+        function renderLyrics() {
+            const container = document.getElementById('lyrics-content');
+            const mobileLyric = document.getElementById('mobile-lyric');
+
+            if (currentLyricIndex < 0) {
+                container.innerHTML = '<div class="lyric-line">♪</div>';
+                mobileLyric.textContent = '♪';
+                return;
+            }
+
+            // Desktop sidebar: show previous, current, and next
+            const lyrics = [];
+            const startIdx = Math.max(0, currentLyricIndex - 1);
+            const endIdx = Math.min(lyricsData.length - 1, currentLyricIndex + 2);
+
+            for (let i = startIdx; i <= endIdx; i++) {
+                const lyric = lyricsData[i];
+                let className = 'lyric-line';
+                if (i < currentLyricIndex) className += ' previous';
+                else if (i === currentLyricIndex) className += ' current';
+                else className += ' next';
+
+                if (lyric.text.trim() === '') {
+                    lyrics.push(`<div class="${className}">♪</div>`);
+                } else {
+                    lyrics.push(`<div class="${className}">${lyric.text}</div>`);
+                }
+            }
+
+            container.innerHTML = lyrics.join('');
+
+            // Mobile overlay: show only current
+            const currentLyric = lyricsData[currentLyricIndex];
+            mobileLyric.textContent = currentLyric.text.trim() === '' ? '♪' : currentLyric.text;
+        }
+
         function gameLoop(ticker) {
             if (!gameState.isPlaying) return;
 
             const currentTime = gameState.audioContext.currentTime - gameState.startTime;
+
+            // Update lyrics
+            updateLyrics(currentTime);
 
             // Draw beat grid lines
             beatGridContainer.removeChildren();
