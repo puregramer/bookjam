@@ -304,13 +304,16 @@
 
         /* Game Layout with Lyrics Sidebar */
         #game-layout {
-            display: none; /* Hidden until game starts */
             width: 100vw;
             height: 100vh;
             position: fixed;
             top: 0;
             left: 0;
             overflow: hidden;
+        }
+
+        #game-layout.hidden {
+            display: none !important;
         }
 
         /* Desktop/Tablet Landscape Layout */
@@ -505,7 +508,7 @@
     </div>
 
     <!-- Game Layout with Lyrics -->
-    <div id="game-layout">
+    <div id="game-layout" class="hidden">
         <div id="game-area"></div>
         <div id="lyrics-sidebar">
             <img class="lyrics-thumbnail" id="lyrics-thumb" src="" alt="Album Art">
@@ -785,14 +788,14 @@
                 resolution: window.devicePixelRatio || 1
             });
 
-            // Hide menu and setup game layout
-            document.getElementById('menu').style.display = 'none';
-            document.getElementById('game-container').style.display = 'none';
-
+            // Setup game layout
             const gameLayout = document.getElementById('game-layout');
-            gameLayout.style.display = window.innerWidth > 768 ? 'flex' : 'block';
-
             const gameArea = document.getElementById('game-area');
+
+            // Show game layout (remove hidden class)
+            gameLayout.classList.remove('hidden');
+
+            // Add canvas to game area
             gameArea.innerHTML = '';
             gameArea.appendChild(app.canvas);
 
