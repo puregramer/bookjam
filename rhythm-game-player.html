@@ -246,10 +246,10 @@
         /* Touch Buttons Container */
         .touch-buttons-container {
             position: absolute;
-            bottom: 55px;
+            bottom: clamp(10px, 1.5vh, 30px);
             left: 0;
             right: 0;
-            height: 100px;
+            height: clamp(80px, 12vh, 140px);
             display: flex;
             flex-direction: row;
             z-index: 1000;
@@ -350,7 +350,7 @@
                 flex: 0 0 65%;
                 position: relative;
                 overflow: visible;
-                padding-bottom: 110px; /* Space for touch buttons */
+                padding-bottom: clamp(110px, 15vh, 180px); /* Space for touch buttons */
                 box-sizing: border-box;
             }
 
@@ -393,7 +393,7 @@
                 height: 100%;
                 position: relative;
                 overflow: visible;
-                padding-bottom: 110px; /* Space for touch buttons */
+                padding-bottom: clamp(110px, 15vh, 180px); /* Space for touch buttons */
                 box-sizing: border-box;
             }
 
@@ -668,10 +668,14 @@
             const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
 
             // 터치 버튼 높이를 화면 크기에 따라 조정 (태블릿/모바일 고려)
-            BUTTON_HEIGHT = Math.min(Math.max(80, viewportHeight * 0.15), 150);
+            // 12vh와 동일한 계산 + 여유 공간
+            BUTTON_HEIGHT = Math.min(Math.max(80, viewportHeight * 0.12), 140);
 
-            // 게임 높이는 전체 높이에서 버튼 높이를 뺀 값 (버튼이 보이도록)
-            GAME_HEIGHT = viewportHeight - BUTTON_HEIGHT;
+            // 버튼 영역 패딩 (15vh와 동일)
+            const buttonAreaPadding = Math.min(Math.max(110, viewportHeight * 0.15), 180);
+
+            // 게임 높이는 전체 높이에서 버튼 패딩을 뺀 값
+            GAME_HEIGHT = viewportHeight - buttonAreaPadding;
 
             LANE_WIDTH = GAME_WIDTH / LANES.length;
             NOTE_HEIGHT = Math.max(15, GAME_HEIGHT * 0.025);
