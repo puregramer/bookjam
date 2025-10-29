@@ -731,37 +731,67 @@
                 const presets = {
                     '1': {
                         audio: 'assets/WizardofOZ.mp3',
-                        chart: 'assets/WizardofOZ_Normal_chart.json'
+                        chart: 'assets/WizardofOZ_Normal_chart.json',
+                        thumbnail: 'assets/thumbnail1.png',
+                        title: 'Wizard of OZ'
                     }
                     // Add more presets here as needed
                 };
 
                 const preset = presets[index];
                 if (preset) {
-                    // Hide menu and show loading message
                     document.addEventListener('DOMContentLoaded', () => {
-                        const menu = document.getElementById('menu');
-                        const menuContent = menu.querySelector('p');
-
-                        // Hide file groups
-                        const fileGroups = document.querySelectorAll('.file-group');
-                        fileGroups.forEach(group => group.style.display = 'none');
-
-                        // Hide start button
-                        document.getElementById('start-btn').style.display = 'none';
-
-                        // Show loading message
-                        menuContent.textContent = '로딩 중...';
-                        menuContent.style.fontSize = '1.5em';
-
-                        // Set files for auto-load
+                        // Set files for auto-load (as string paths)
                         chartFile = preset.chart;
                         audioFile = preset.audio;
 
-                        // Auto-start after a brief delay
-                        setTimeout(() => {
-                            loadFiles();
-                        }, 500);
+                        // Hide file input groups (already selected automatically)
+                        const fileGroups = document.querySelectorAll('.file-group');
+                        fileGroups.forEach(group => group.style.display = 'none');
+
+                        // Update status to show auto-loaded files
+                        const menu = document.getElementById('menu');
+                        const menuTitle = menu.querySelector('p');
+
+                        // Show thumbnail if available
+                        if (preset.thumbnail) {
+                            const thumbnailImg = document.createElement('img');
+                            thumbnailImg.src = preset.thumbnail;
+                            thumbnailImg.style.width = '200px';
+                            thumbnailImg.style.height = '200px';
+                            thumbnailImg.style.objectFit = 'cover';
+                            thumbnailImg.style.borderRadius = '20px';
+                            thumbnailImg.style.marginBottom = '20px';
+                            thumbnailImg.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)';
+                            menu.insertBefore(thumbnailImg, menuTitle.nextSibling);
+                        }
+
+                        // Show song title
+                        const titleElement = document.createElement('h2');
+                        titleElement.textContent = preset.title;
+                        titleElement.style.fontSize = 'clamp(24px, 5vw, 36px)';
+                        titleElement.style.marginTop = '10px';
+                        titleElement.style.marginBottom = '20px';
+                        titleElement.style.background = 'linear-gradient(135deg, #FF6B9D, #C77DFF, #4FACFE)';
+                        titleElement.style.webkitBackgroundClip = 'text';
+                        titleElement.style.webkitTextFillColor = 'transparent';
+                        titleElement.style.fontWeight = '700';
+                        menu.insertBefore(titleElement, menuTitle.nextSibling);
+
+                        // Show file info
+                        const infoElement = document.createElement('div');
+                        infoElement.style.fontSize = '14px';
+                        infoElement.style.color = '#666';
+                        infoElement.style.marginBottom = '20px';
+                        infoElement.innerHTML = `
+                            <div style="margin-bottom: 5px;">📊 Chart: ${preset.chart.split('/').pop()}</div>
+                            <div>🎵 Audio: ${preset.audio.split('/').pop()}</div>
+                        `;
+                        menu.insertBefore(infoElement, document.getElementById('start-btn'));
+
+                        // Enable start button
+                        document.getElementById('start-btn').disabled = false;
+                        document.getElementById('start-btn').textContent = '게임 시작!';
                     });
                 }
             }
