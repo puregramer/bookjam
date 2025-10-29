@@ -1410,15 +1410,84 @@
             if (index === '0') {
                 console.log('🎮 Auto-loading chart from URL parameter...');
 
-                // 파일 경로 설정
-                chartFile = 'assets/bookjam_intro_Normal_chart.json';
-                audioFile = 'assets/bookjam_intro.mp3';
+                try {
+                    // 파일 경로 설정
+                    chartFile = 'assets/bookjam_intro_Normal_chart.json';
+                    audioFile = 'assets/bookjam_intro.mp3';
 
-                // 메뉴 숨기기
-                document.getElementById('menu').classList.add('hidden');
+                    // 차트와 오디오 미리 로드 (게임은 시작하지 않음)
+                    const chartResponse = await fetch(chartFile);
+                    const chartText = await chartResponse.text();
+                    gameState.chartData = JSON.parse(chartText);
 
-                // 자동 로드 및 재생 (얼럿 건너뛰기)
-                await loadFiles(true);
+                    const audioResponse = await fetch(audioFile);
+                    const arrayBuffer = await audioResponse.arrayBuffer();
+
+                    // AudioContext는 사용자 제스처 후에 생성
+                    if (!gameState.audioContext) {
+                        gameState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    gameState.audioBuffer = await gameState.audioContext.decodeAudioData(arrayBuffer);
+
+                    // 메타데이터 설정
+                    gameState.offset = gameState.chartData.offset || 0;
+                    const title = gameState.chartData.title || 'Untitled';
+                    const difficulty = gameState.chartData.difficulty || 'Hard';
+                    const chartLanes = gameState.chartData.lanes;
+
+                    // 난이도에 맞게 레인 설정
+                    LANES = DIFFICULTY_LANES[difficulty] || DIFFICULTY_LANES['Hard'];
+                    if (chartLanes && chartLanes !== LANES.length) {
+                        const difficultyByLanes = { 3: 'Easy', 4: 'Normal', 5: 'Hard' };
+                        const correctedDifficulty = difficultyByLanes[chartLanes] || difficulty;
+                        LANES = DIFFICULTY_LANES[correctedDifficulty] || DIFFICULTY_LANES['Hard'];
+                    }
+
+                    // 노트 복사
+                    gameState.notes = gameState.chartData.notes.map(note => ({
+                        time: note.time,
+                        lane: note.lane,
+                        type: note.type || 'normal',
+                        endTime: note.endTime,
+                        hit: false,
+                        missed: false
+                    }));
+
+                    console.log(`✅ Chart and audio pre-loaded: ${title} (${difficulty})`);
+
+                    // 메뉴 내용 변경
+                    const menu = document.getElementById('menu');
+                    const fileGroups = menu.querySelectorAll('.file-group');
+                    fileGroups.forEach(group => group.style.display = 'none');
+
+                    // 로고 아래 메시지 변경
+                    const menuMessage = menu.querySelector('p');
+                    menuMessage.textContent = `${title} - ${difficulty}`;
+                    menuMessage.style.fontSize = '1.5em';
+                    menuMessage.style.fontWeight = 'bold';
+                    menuMessage.style.color = '#FF1493';
+
+                    // 시작 버튼 활성화 및 텍스트 변경
+                    const startBtn = document.getElementById('start-btn');
+                    startBtn.disabled = false;
+                    startBtn.textContent = '🎮 게임 시작! 🎮';
+
+                    // 버튼 클릭 시 AudioContext resume 후 게임 시작
+                    startBtn.onclick = async () => {
+                        // AudioContext resume (사용자 제스처 필요)
+                        if (gameState.audioContext.state === 'suspended') {
+                            await gameState.audioContext.resume();
+                        }
+
+                        // 메뉴 숨기고 게임 시작
+                        menu.classList.add('hidden');
+                        await initGame();
+                    };
+
+                } catch (error) {
+                    console.error('Auto-load failed:', error);
+                    alert('자동 로드 실패: ' + error.message);
+                }
             }
         })();
     </script>
