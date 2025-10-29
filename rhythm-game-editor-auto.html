@@ -1553,31 +1553,8 @@
                         drawNormalNote(noteSprite, laneColor, isSelected);
                     }
 
-                    // 편집 모드 이벤트 설정
-                    if (editorState.editMode) {
-                        noteSprite.interactive = true;
-                        noteSprite.cursor = 'pointer';
-                        noteSprite.eventMode = 'static';
-                        noteSprite.noteIndex = index;
-
-                        noteSprite.on('pointerdown', (event) => {
-                            const idx = event.target.noteIndex;
-                            const targetNote = editorState.notes[idx];
-                            const isLong = targetNote.type === 'long' && targetNote.endTime;
-
-                            if (editorState.selectedNotes.has(idx)) {
-                                editorState.selectedNotes.delete(idx);
-                            } else {
-                                editorState.selectedNotes.add(idx);
-                            }
-
-                            // 일반 노트는 선택 상태 변경 시 다시 그리기
-                            if (!isLong) {
-                                const laneColor = LANES[targetNote.lane].color;
-                                drawNormalNote(noteSprite, laneColor, editorState.selectedNotes.has(idx));
-                            }
-                        });
-                    }
+                    // 편집 모드 이벤트 설정은 toggleEditMode에서 처리
+                    // 여기서는 스프라이트만 생성
                 }
             });
 
@@ -1928,6 +1905,8 @@
                 return;
             }
 
+            console.log(`▶ Start playback - currentTime before: ${editorState.currentTime}`);
+
             if (editorState.audioSource) {
                 editorState.audioSource.stop();
             }
@@ -1944,19 +1923,33 @@
             document.getElementById('status').textContent = '재생 중';
             document.getElementById('play-btn').textContent = '⏸ 일시정지';
 
+            console.log(`▶ Playing from: ${offset.toFixed(2)}s, startTime: ${editorState.startTime.toFixed(2)}, audioContext.currentTime: ${editorState.audioContext.currentTime.toFixed(2)}`);
+
             editorState.audioSource.onended = () => {
                 stopPlayback();
             };
         }
 
         function pausePlayback() {
+            // 현재 재생 시간 저장 (audioSource.stop() 전에 저장해야 함)
+            if (editorState.audioContext && editorState.startTime !== undefined) {
+                const pausedTime = editorState.audioContext.currentTime - editorState.startTime;
+                editorState.currentTime = Math.max(0, pausedTime); // 음수 방지
+                console.log(`⏸ Pausing at: ${editorState.currentTime.toFixed(2)}s (audioContext: ${editorState.audioContext.currentTime.toFixed(2)}, startTime: ${editorState.startTime.toFixed(2)})`);
+            }
+
             if (editorState.audioSource) {
+                // onended 콜백을 제거하여 stopPlayback()이 호출되지 않도록 함
+                editorState.audioSource.onended = null;
                 editorState.audioSource.stop();
                 editorState.audioSource = null;
             }
+
             editorState.isPlaying = false;
             document.getElementById('status').textContent = '일시정지';
             document.getElementById('play-btn').textContent = '▶ 재생';
+
+            console.log(`⏸ Paused, currentTime saved: ${editorState.currentTime.toFixed(2)}s`);
         }
 
         function stopPlayback() {
@@ -1971,14 +1964,17 @@
         }
 
         function editorLoop(ticker) {
+            // 재생 중일 때만 currentTime 업데이트
             if (editorState.isPlaying && editorState.audioContext) {
                 editorState.currentTime = editorState.audioContext.currentTime - editorState.startTime;
-                document.getElementById('current-time').textContent = editorState.currentTime.toFixed(2) + 's';
+            }
 
-                if (editorState.bpm > 0) {
-                    const currentBeat = Math.floor((editorState.currentTime - editorState.offset) / (60 / editorState.bpm)) + 1;
-                    document.getElementById('current-beat').textContent = currentBeat;
-                }
+            // 시간 표시는 항상 업데이트 (일시정지 시에도 표시)
+            document.getElementById('current-time').textContent = editorState.currentTime.toFixed(2) + 's';
+
+            if (editorState.bpm > 0) {
+                const currentBeat = Math.floor((editorState.currentTime - editorState.offset) / (60 / editorState.bpm)) + 1;
+                document.getElementById('current-beat').textContent = currentBeat;
             }
 
             // Draw beat grid lines
@@ -2200,7 +2196,12 @@
                     noteSprite.x = note.lane * LANE_WIDTH + 5;
                     noteSprite.y = longNoteY;
                 } else {
-                    // 일반 노트: 위치만 업데이트 (이미 preCreateAllNoteSprites에서 그렸음)
+                    // 일반 노트: 선택 상태가 변경되었으면 다시 그리기
+                    if (isSelected !== noteSprite.wasSelected) {
+                        drawNormalNote(noteSprite, noteColor, isSelected);
+                        noteSprite.wasSelected = isSelected;
+                    }
+                    // 위치 업데이트
                     noteSprite.x = note.lane * LANE_WIDTH + 5;
                     noteSprite.y = noteY - NOTE_HEIGHT / 2;
                 }
@@ -2443,6 +2444,30 @@
                 statusText.style.color = '#38ef7d';
                 deleteBtn.disabled = false;
                 console.log('✏️ 편집 모드 활성화: 노트를 클릭하여 선택하세요');
+
+                // 모든 노트에 이벤트 리스너 추가
+                editorState.notes.forEach((note, index) => {
+                    if (note.sprite) {
+                        note.sprite.interactive = true;
+                        note.sprite.cursor = 'pointer';
+                        note.sprite.eventMode = 'static';
+                        note.sprite.noteIndex = index;
+
+                        note.sprite.removeAllListeners('pointerdown');
+                        note.sprite.on('pointerdown', (event) => {
+                            const idx = event.target.noteIndex;
+                            const targetNote = editorState.notes[idx];
+
+                            if (editorState.selectedNotes.has(idx)) {
+                                editorState.selectedNotes.delete(idx);
+                            } else {
+                                editorState.selectedNotes.add(idx);
+                            }
+
+                            console.log(`📝 Note ${idx} ${editorState.selectedNotes.has(idx) ? 'selected' : 'deselected'}. Total: ${editorState.selectedNotes.size}`);
+                        });
+                    }
+                });
             } else {
                 btn.textContent = '✏️ 편집모드';
                 btn.classList.remove('btn-success');
@@ -2452,6 +2477,16 @@
                 deleteBtn.disabled = true;
                 editorState.selectedNotes.clear();
                 console.log('✏️ 일반 모드로 전환');
+
+                // 모든 노트에서 이벤트 리스너 제거
+                editorState.notes.forEach((note) => {
+                    if (note.sprite) {
+                        note.sprite.interactive = false;
+                        note.sprite.cursor = 'default';
+                        note.sprite.eventMode = 'auto';
+                        note.sprite.removeAllListeners('pointerdown');
+                    }
+                });
             }
         }
 
