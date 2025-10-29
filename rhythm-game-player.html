@@ -245,7 +245,7 @@
 
         /* Cute Touch Buttons */
         .touch-button {
-            position: fixed;
+            position: absolute;
             bottom: 0;
             display: flex;
             align-items: center;
@@ -268,11 +268,9 @@
         }
 
         canvas {
-            border-radius: 20px;
-            box-shadow: 0 15px 60px rgba(255, 107, 157, 0.4);
-            border: 6px solid #fff;
-            max-width: 100vw;
-            max-height: 100vh;
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
         }
 
         #particles {
@@ -307,9 +305,12 @@
         /* Game Layout with Lyrics Sidebar */
         #game-layout {
             display: none; /* Hidden until game starts */
-            width: 100%;
-            height: 100%;
-            position: relative;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow: hidden;
         }
 
         /* Desktop/Tablet Landscape Layout */
@@ -322,6 +323,8 @@
             #game-area {
                 flex: 0 0 65%;
                 position: relative;
+                overflow: hidden;
+                height: 100%;
             }
 
             #lyrics-sidebar {
@@ -338,7 +341,10 @@
                 -webkit-backdrop-filter: blur(20px);
                 padding: 20px;
                 overflow-y: auto;
+                overflow-x: hidden;
                 box-shadow: -5px 0 30px rgba(0, 0, 0, 0.1);
+                height: 100%;
+                box-sizing: border-box;
             }
         }
 
@@ -1101,7 +1107,9 @@
                     handleKeyRelease(i);  // 롱노트 종료 처리 (마우스가 버튼 밖으로 나갈 때)
                 });
 
-                document.getElementById('game-container').appendChild(button);
+                // 게임 영역이 있으면 game-area에, 없으면 game-container에 추가
+                const container = document.getElementById('game-area') || document.getElementById('game-container');
+                container.appendChild(button);
                 gameState.touchButtons.push(button);
             }
         }
