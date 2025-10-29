@@ -14,228 +14,72 @@
 
         body {
             font-family: 'Orbitron', 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            overflow-x: hidden;
+            position: relative;
+            overflow: hidden;
+            background-image: url('assets/intro.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
-        .container {
-            max-width: 1200px;
+        .button-container {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: clamp(30px, 5vw, 60px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            height: 100%;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .title {
-            font-size: clamp(2.5rem, 8vw, 5rem);
-            font-weight: 900;
-            background: linear-gradient(45deg, #fff, #f093fb);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 0 30px rgba(240, 147, 251, 0.5);
-            margin-bottom: 20px;
-            letter-spacing: 3px;
-        }
-
-        .subtitle {
-            font-size: clamp(1rem, 3vw, 1.5rem);
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 400;
-        }
-
-        .description {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.85);
-            font-size: clamp(0.9rem, 2vw, 1.1rem);
-            line-height: 1.6;
-            margin-bottom: 50px;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            margin-bottom: 40px;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            transition: all 0.3s ease;
+        .invisible-button {
+            position: absolute;
             cursor: pointer;
-            text-decoration: none;
-            color: white;
-            display: block;
+            transition: background-color 0.2s ease;
+            border: none;
+            background: transparent;
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 40px rgba(240, 147, 251, 0.4);
-            border-color: rgba(240, 147, 251, 0.8);
-        }
-
-        .card-title {
-            font-size: clamp(1.3rem, 3vw, 1.8rem);
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: #f093fb;
-        }
-
-        .card-description {
-            font-size: clamp(0.85rem, 2vw, 1rem);
-            line-height: 1.5;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .features {
-            margin-top: 50px;
-            padding-top: 40px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .features-title {
-            text-align: center;
-            font-size: clamp(1.5rem, 4vw, 2rem);
-            color: white;
-            margin-bottom: 30px;
-            font-weight: 700;
-        }
-
-        .features-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .feature-item {
+        .invisible-button:hover {
             background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 3px solid #f093fb;
         }
 
-        .feature-item h3 {
-            color: #f093fb;
-            font-size: clamp(1rem, 2.5vw, 1.2rem);
-            margin-bottom: 10px;
+        .invisible-button:active {
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        .feature-item p {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: clamp(0.85rem, 2vw, 0.95rem);
-            line-height: 1.4;
+        /* 가운데 캐릭터 버튼 (게임하기 - 분홍 토끼) */
+        .center-character-button {
+            top: 32%;
+            left: 36%;
+            width: 28%;
+            height: 35%;
         }
 
-        .footer {
-            text-align: center;
-            margin-top: 50px;
-            padding-top: 30px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-            color: rgba(255, 255, 255, 0.7);
-            font-size: clamp(0.8rem, 2vw, 0.9rem);
-        }
-
-        .footer a {
-            color: #f093fb;
-            text-decoration: none;
-            font-weight: 700;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
+        /* 하단 버튼 영역 */
+        .bottom-button {
+            bottom: 5%;
+            left: 25%;
+            width: 50%;
+            height: 10%;
         }
 
         @media (max-width: 768px) {
-            .cards {
-                grid-template-columns: 1fr;
+            .center-character-button {
+                top: 30%;
+                left: 33%;
+                width: 34%;
+                height: 38%;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1 class="title">BookJam</h1>
-            <p class="subtitle">DJMAX Style Rhythm Game</p>
-        </div>
+    <div class="button-container">
+        <!-- 가운데 캐릭터 (게임하기) 버튼 -->
+        <a href="rhythm-game-player.html" class="invisible-button center-character-button"></a>
 
-        <p class="description">
-            PixiJS와 Web Audio API를 활용한 DJMAX 스타일의 리듬 게임입니다.
-            에디터에서 차트를 제작하고, 플레이어에서 게임을 즐기세요!
-        </p>
-
-        <div class="cards">
-            <a href="rhythm-game-editor-auto.html" class="card">
-                <h2 class="card-title">Chart Editor</h2>
-                <p class="card-description">
-                    MP3 파일을 업로드하여 나만의 리듬 게임 차트를 제작하세요.
-                    BPM 자동 감지와 실시간 노트 배치 기능을 제공합니다.
-                </p>
-            </a>
-
-            <a href="rhythm-game-player.html" class="card">
-                <h2 class="card-title">Game Player</h2>
-                <p class="card-description">
-                    제작한 차트를 플레이하세요!
-                    5키 시스템 (D, F, Space, J, K)으로 완벽한 타이밍에 노트를 터치하세요.
-                </p>
-            </a>
-        </div>
-
-        <div class="features">
-            <h2 class="features-title">주요 기능</h2>
-            <div class="features-list">
-                <div class="feature-item">
-                    <h3>PixiJS v8 렌더링</h3>
-                    <p>고성능 WebGL 기반 2D 렌더링으로 부드러운 게임 플레이를 제공합니다.</p>
-                </div>
-                <div class="feature-item">
-                    <h3>Web Audio API</h3>
-                    <p>정밀한 오디오 타이밍과 BPM 자동 감지 기능을 제공합니다.</p>
-                </div>
-                <div class="feature-item">
-                    <h3>5키 시스템</h3>
-                    <p>접근성이 좋은 5레인 (D, F, Space, J, K) 시스템을 사용합니다.</p>
-                </div>
-                <div class="feature-item">
-                    <h3>반응형 디자인</h3>
-                    <p>모바일과 데스크톱 모두에서 최적화된 게임 플레이를 경험하세요.</p>
-                </div>
-                <div class="feature-item">
-                    <h3>판정 시스템</h3>
-                    <p>PERFECT, GREAT, GOOD, MISS의 정확한 타이밍 판정을 제공합니다.</p>
-                </div>
-                <div class="feature-item">
-                    <h3>차트 저장/로드</h3>
-                    <p>제작한 차트를 JSON 형식으로 저장하고 불러올 수 있습니다.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>Built with PixiJS v8 and Web Audio API</p>
-            <p><a href="https://github.com/puregramer/bookjam" target="_blank">GitHub Repository</a></p>
-        </div>
+        <!-- 하단 버튼 영역 -->
+        <a href="rhythm-game-player.html" class="invisible-button bottom-button"></a>
     </div>
 </body>
 </html>

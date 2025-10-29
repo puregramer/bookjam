@@ -338,6 +338,11 @@
                 <button class="btn btn-primary" id="edit-mode-btn" disabled>✏️ 편집모드</button>
                 <span id="edit-mode-status" style="font-size: 11px; color: #aaa;">일반모드</span>
             </div>
+
+            <div class="control-group">
+                <button class="btn btn-primary" id="long-note-mode-btn" disabled>🎵 롱노트 모드</button>
+                <span id="long-note-status" style="font-size: 11px; color: #aaa;">일반 노트</span>
+            </div>
         </div>
 
         <div id="editor-container">
@@ -424,16 +429,31 @@
                 </div>
 
                 <div class="sidebar-section">
-                    <h3>난이도별 특성</h3>
+                    <h3>🎮 난이도별 특성</h3>
                     <div class="info-box">
-                        <strong>Easy:</strong> 1/2박자 (downbeat)<br>
-                        <strong>Normal:</strong> 1/4박자<br>
-                        <strong>Hard:</strong> 1/4 + 1/8박자<br>
-                        <strong>Expert:</strong> 1/4+1/8+1/16박자<br>
+                        <strong>Easy (3레인):</strong><br>
+                        • 레인: D - Space - K<br>
+                        • 박자: 1/2박자 (강한 비트)<br>
+                        • 롱노트: 연속 노트 자동 변환<br>
+                        • 대상: 초등 저학년<br>
                         <br>
-                        <strong>밀도 조절:</strong><br>
-                        Chorus 130%, Verse 100%<br>
-                        Break 60%, Intro 40%
+                        <strong>Normal (4레인):</strong><br>
+                        • 레인: D - F - J - K<br>
+                        • 박자: 1/4박자 (중간 비트)<br>
+                        • 롱노트: 연속 노트 자동 변환<br>
+                        • 대상: 초등 고학년<br>
+                        <br>
+                        <strong>Hard (5레인):</strong><br>
+                        • 레인: D - F - Space - J - K<br>
+                        • 박자: 1/4 + 1/8박자<br>
+                        • 롱노트: 연속 노트 자동 변환<br>
+                        • 대상: 중학생+<br>
+                        <br>
+                        <strong>Expert (5레인):</strong><br>
+                        • 레인: D - F - Space - J - K<br>
+                        • 박자: 1/4+1/8+1/16박자<br>
+                        • 롱노트: 연속 노트 자동 변환<br>
+                        • 대상: 고급 플레이어
                     </div>
                 </div>
 
@@ -445,6 +465,38 @@
                         <br>
                         Delete: 마지막 삭제<br>
                         🔄 재생성: 새로 생성
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>🎵 롱 노트 시스템</h3>
+                    <div class="info-box">
+                        <strong>✨ 자동 생성 (최적화됨):</strong><br>
+                        • 조건: 같은 레인 1초 이내<br>
+                        • 최소: 2개 연속, 0.1초 이상<br>
+                        • 생성 후 잠금 (안정적)<br>
+                        <br>
+                        <strong>최적화 디자인:</strong><br>
+                        • 헤드: 두꺼운 캡 (1.5배)<br>
+                        • 본체: 단색 (50% 투명도)<br>
+                        • 테일: 두꺼운 캡 (1.5배)<br>
+                        • 테두리: 흰색 4px<br>
+                        <br>
+                        <strong>성능 개선:</strong><br>
+                        • 화면 밖 노트 컬링<br>
+                        • 렌더링 최적화<br>
+                        • 디버그 로그 제거<br>
+                        <br>
+                        <strong>🎮 수동 추가:</strong><br>
+                        1. "롱노트 모드" 버튼 클릭<br>
+                        2. 재생하며 키를 누르고 있기<br>
+                        3. 원하는 길이만큼 누른 뒤 떼기<br>
+                        <br>
+                        <strong>시각 효과:</strong><br>
+                        • 헤드: 시작 (진한 색)<br>
+                        • 본체: 중간 (반투명 막대)<br>
+                        • 테일: 끝 (진한 색)<br>
+                        • 입력 중: 초록 테두리
                     </div>
                 </div>
 
@@ -508,6 +560,10 @@
                     <kbd>D F Space J K</kbd> 노트<br>
                     <kbd>Delete</kbd> 삭제<br>
                     <kbd>Space</kbd> 재생/정지<br>
+                    <kbd>E</kbd> 편집모드<br>
+                    <br>
+                    <strong>🎵 롱 노트</strong><br>
+                    롱노트 모드 ON → 키 누르고 있기<br>
                     <br>
                     <strong>💡 사용법</strong><br>
                     1. 음원만 로드하세요!<br>
@@ -521,13 +577,34 @@
 
     <script src="https://pixijs.download/release/pixi.js"></script>
     <script>
-        const LANES = [
-            { key: 'KeyD', index: 0, color: 0xFF6B6B, label: 'D' },
-            { key: 'KeyF', index: 1, color: 0x4ECDC4, label: 'F' },
-            { key: 'Space', index: 2, color: 0xFFE66D, label: '␣' },
-            { key: 'KeyJ', index: 3, color: 0x95E1D3, label: 'J' },
-            { key: 'KeyK', index: 4, color: 0xF38181, label: 'K' }
+        // 전체 레인 정의 (5레인)
+        const ALL_LANES = [
+            { key: 'KeyD', index: 0, color: 0xFF6B6B, label: 'D', position: 'left' },
+            { key: 'KeyF', index: 1, color: 0x4ECDC4, label: 'F', position: 'left' },
+            { key: 'Space', index: 2, color: 0xFFE66D, label: '␣', position: 'center' },
+            { key: 'KeyJ', index: 3, color: 0x95E1D3, label: 'J', position: 'right' },
+            { key: 'KeyK', index: 4, color: 0xF38181, label: 'K', position: 'right' }
         ];
+
+        // 난이도별 레인 구성
+        const DIFFICULTY_LANES = {
+            'Easy': [
+                { key: 'KeyD', index: 0, color: 0xFF6B6B, label: 'D', position: 'left', originalIndex: 0 },
+                { key: 'Space', index: 1, color: 0xFFE66D, label: '␣', position: 'center', originalIndex: 2 },
+                { key: 'KeyK', index: 2, color: 0xF38181, label: 'K', position: 'right', originalIndex: 4 }
+            ],
+            'Normal': [
+                { key: 'KeyD', index: 0, color: 0xFF6B6B, label: 'D', position: 'left', originalIndex: 0 },
+                { key: 'KeyF', index: 1, color: 0x4ECDC4, label: 'F', position: 'left', originalIndex: 1 },
+                { key: 'KeyJ', index: 2, color: 0x95E1D3, label: 'J', position: 'right', originalIndex: 3 },
+                { key: 'KeyK', index: 3, color: 0xF38181, label: 'K', position: 'right', originalIndex: 4 }
+            ],
+            'Hard': ALL_LANES.map((lane, idx) => ({ ...lane, originalIndex: idx })),
+            'Expert': ALL_LANES.map((lane, idx) => ({ ...lane, originalIndex: idx }))
+        };
+
+        // 현재 활성 레인 (난이도에 따라 변경됨)
+        let LANES = DIFFICULTY_LANES['Hard'];
 
         const editorState = {
             notes: [],
@@ -553,7 +630,10 @@
             showOnsets: false,   // Toggle onset visualization
             editMode: false,     // Edit mode for note selection/editing
             selectedNotes: new Set(),  // Set of selected note indices
-            audioFileName: ''    // Original audio file name
+            audioFileName: '',   // Original audio file name
+            longNoteMode: false, // Long note mode toggle
+            activeLongNotes: {}, // Currently active long notes { lane: { startTime, startIndex } }
+            longNotesConverted: false // 롱노트 변환 완료 플래그 (중복 방지)
         };
 
         let app, gameContainer, notesContainer, gridContainer, beatGridContainer, onsetMarkersContainer;
@@ -680,6 +760,21 @@
 
             document.getElementById('difficulty-select').addEventListener('change', (e) => {
                 editorState.difficulty = e.target.value;
+
+                // 난이도에 따라 레인 변경
+                LANES = DIFFICULTY_LANES[editorState.difficulty];
+                console.log(`🎮 난이도 변경: ${editorState.difficulty} (레인 수: ${LANES.length})`);
+
+                // 레인 다시 그리기
+                if (gameContainer) {
+                    gameContainer.removeChildren();
+                    drawLanes();
+                    drawJudgmentLine();
+                }
+
+                // 화면 크기 재계산
+                calculateDimensions();
+
                 if (editorState.audioBuffer) {
                     regenerateNotes();
                 }
@@ -708,7 +803,11 @@
             // Delete Selected Notes
             document.getElementById('delete-note-btn').addEventListener('click', deleteSelectedNotes);
 
+            // Toggle Long Note Mode
+            document.getElementById('long-note-mode-btn').addEventListener('click', toggleLongNoteMode);
+
             window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup', handleKeyUp);
         }
 
         function handleKeyDown(e) {
@@ -771,8 +870,30 @@
                 if (lane && editorState.isPlaying) {
                     e.preventDefault();
                     const time = editorState.currentTime;
-                    addNote(lane.index, time);
-                    showKeyFlash(lane.index);
+
+                    if (editorState.longNoteMode) {
+                        // 롱 노트 모드: 키를 누르면 시작 시간 기록
+                        if (!editorState.activeLongNotes[lane.index]) {
+                            // 새 롱 노트 시작
+                            const noteIndex = editorState.notes.length;
+                            const note = {
+                                time: parseFloat(time.toFixed(3)),
+                                endTime: null,  // keyup에서 설정됨
+                                lane: lane.index,
+                                type: 'long'
+                            };
+                            editorState.notes.push(note);
+                            editorState.activeLongNotes[lane.index] = {
+                                startTime: time,
+                                noteIndex: noteIndex
+                            };
+                            console.log(`🎵 롱 노트 시작: Lane ${lane.index}, Time ${time.toFixed(3)}s`);
+                        }
+                    } else {
+                        // 일반 노트 모드
+                        addNote(lane.index, time);
+                        showKeyFlash(lane.index);
+                    }
                 }
 
                 if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -788,6 +909,42 @@
             }
         }
 
+        function handleKeyUp(e) {
+            const activeElement = document.activeElement;
+            const isTyping = activeElement.tagName === 'INPUT';
+
+            if (!isTyping && editorState.longNoteMode && editorState.isPlaying) {
+                const lane = LANES.find(l => l.key === e.code);
+                if (lane && editorState.activeLongNotes[lane.index]) {
+                    e.preventDefault();
+                    const endTime = editorState.currentTime;
+                    const longNoteData = editorState.activeLongNotes[lane.index];
+                    const noteIndex = longNoteData.noteIndex;
+                    const note = editorState.notes[noteIndex];
+
+                    // 롱 노트 완성
+                    const duration = endTime - longNoteData.startTime;
+
+                    // 최소 길이 검증 (0.1초 미만이면 일반 노트로 변환)
+                    if (duration < 0.1) {
+                        console.log(`⚠️ 롱 노트가 너무 짧음 (${(duration * 1000).toFixed(0)}ms) → 일반 노트로 변환`);
+                        note.type = 'normal';
+                        delete note.endTime;
+                    } else {
+                        note.endTime = parseFloat(endTime.toFixed(3));
+                        console.log(`✅ 롱 노트 완성: Lane ${lane.index}, ${longNoteData.startTime.toFixed(3)}s ~ ${endTime.toFixed(3)}s (${(duration * 1000).toFixed(0)}ms)`);
+                    }
+
+                    // 활성 롱 노트 제거
+                    delete editorState.activeLongNotes[lane.index];
+
+                    // 노트 재정렬
+                    editorState.notes.sort((a, b) => a.time - b.time);
+                    updateStats();
+                }
+            }
+        }
+
         async function loadAndAnalyzeAudio(file) {
             try {
                 showLoading('음원 로딩 중...', '오디오 디코딩');
@@ -799,6 +956,7 @@
                 const arrayBuffer = await file.arrayBuffer();
                 editorState.audioBuffer = await editorState.audioContext.decodeAudioData(arrayBuffer);
                 editorState.duration = editorState.audioBuffer.duration;
+                editorState.longNotesConverted = false;  // 새 음원 로드 시 플래그 초기화
 
                 showLoading('BPM 분석 중...', '템포 및 비트 감지');
 
@@ -821,6 +979,19 @@
 
                 showLoading('노트 생성 중...', '난이도: ' + editorState.difficulty);
 
+                // 난이도에 따라 레인 설정
+                LANES = DIFFICULTY_LANES[editorState.difficulty];
+                console.log(`🎮 레인 설정: ${editorState.difficulty} (${LANES.length} lanes)`);
+
+                // 레인 다시 그리기 (필요시)
+                if (gameContainer) {
+                    gameContainer.removeChildren();
+                    drawLanes();
+                    drawJudgmentLine();
+                }
+
+                calculateDimensions();
+
                 // 자동 노트 생성
                 generateNotes();
 
@@ -839,6 +1010,7 @@
                 document.getElementById('tap-bpm-btn').disabled = false;
                 document.getElementById('mark-beat-btn').disabled = false;
                 document.getElementById('toggle-onset-btn').disabled = false;
+                document.getElementById('long-note-mode-btn').disabled = false;
 
                 alert(`✨ 분석 완료!\n\nBPM: ${detectedBPM.toFixed(1)}\nOffset: ${detectedOffset.toFixed(3)}s\n노트: ${editorState.notes.length}개\n난이도: ${editorState.difficulty}\n\n재생 버튼을 눌러 확인하세요!\n※ 박자가 안맞으면 BPM이나 Offset을 수동 조정하세요.`);
 
@@ -1199,15 +1371,237 @@
             return sections;
         }
 
+        // 5레인 기준 레인을 난이도별 레인으로 매핑
+        function mapLaneToDifficulty(lane5, difficulty) {
+            // lane5: 0(D), 1(F), 2(Space), 3(J), 4(K)
+
+            if (difficulty === 'Easy') {
+                // Easy: 3레인 (D, Space, K)
+                // 5레인 → 3레인 매핑
+                if (lane5 === 0 || lane5 === 1) return 0;  // D, F → D
+                if (lane5 === 2) return 1;                  // Space → Space
+                if (lane5 === 3 || lane5 === 4) return 2;  // J, K → K
+            } else if (difficulty === 'Normal') {
+                // Normal: 4레인 (D, F, J, K) - Space 제외
+                if (lane5 === 0) return 0;  // D → D
+                if (lane5 === 1) return 1;  // F → F
+                if (lane5 === 2) return -1; // Space는 사용 안 함 (스킵)
+                if (lane5 === 3) return 2;  // J → J
+                if (lane5 === 4) return 3;  // K → K
+            } else {
+                // Hard, Expert: 5레인 (그대로)
+                return lane5;
+            }
+
+            return -1; // 매핑 실패
+        }
+
+        // 연속된 노트를 롱노트로 병합 (모든 연속 노트 변환)
+        function convertToLongNotes() {
+            if (editorState.notes.length === 0) return 0;
+            if (editorState.longNotesConverted) {
+                console.log(`⏭️ Skipping convertToLongNotes (already converted)`);
+                return 0;
+            }
+
+            const MIN_CONSECUTIVE_NOTES = 2;
+            const MIN_LONG_NOTE_DURATION = 0.1;
+            const MAX_GAP = 0.5;  // 0.5초 (BPM 85 기준 약 1/4박자)
+
+            console.log(`🔍 Long note conversion settings:`);
+            console.log(`   - Min consecutive notes: ${MIN_CONSECUTIVE_NOTES}`);
+            console.log(`   - Min duration: ${MIN_LONG_NOTE_DURATION}s`);
+            console.log(`   - Max gap: ${MAX_GAP}s`);
+
+            // 시간순 정렬 (안전성)
+            editorState.notes.sort((a, b) => a.time - b.time);
+
+            // 레인별로 노트 그룹화
+            const notesByLane = {};
+            for (let i = 0; i < LANES.length; i++) {
+                notesByLane[i] = [];
+            }
+
+            editorState.notes.forEach((note, index) => {
+                notesByLane[note.lane].push({ note, originalIndex: index });
+            });
+
+            const longNoteCandidates = [];
+
+            // 각 레인에서 연속된 노트 찾기
+            for (let lane = 0; lane < LANES.length; lane++) {
+                const laneNotes = notesByLane[lane];
+
+                if (laneNotes.length < MIN_CONSECUTIVE_NOTES) continue;
+
+                let i = 0;
+                let sequenceCount = 0;
+                while (i < laneNotes.length) {
+                    const sequence = [laneNotes[i]];
+                    let j = i + 1;
+
+                    // 연속된 노트 찾기 (간격 <= MAX_GAP)
+                    while (j < laneNotes.length) {
+                        const gap = laneNotes[j].note.time - laneNotes[j - 1].note.time;
+                        if (gap <= MAX_GAP) {
+                            sequence.push(laneNotes[j]);
+                            j++;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    // MIN_CONSECUTIVE_NOTES개 이상 연속 && 전체 길이가 MIN_LONG_NOTE_DURATION 이상
+                    if (sequence.length >= MIN_CONSECUTIVE_NOTES) {
+                        const startTime = sequence[0].note.time;
+                        const endTime = sequence[sequence.length - 1].note.time;
+                        const duration = endTime - startTime;
+
+                        if (duration >= MIN_LONG_NOTE_DURATION) {
+                            longNoteCandidates.push({
+                                lane: lane,
+                                sequence: sequence,
+                                startTime: startTime,
+                                endTime: endTime,
+                                duration: duration,
+                                noteCount: sequence.length
+                            });
+                            sequenceCount++;
+                        }
+                    }
+
+                    i = j;
+                }
+            }
+
+            // 모든 연속 노트를 롱노트로 변환 (비율 제한 없음)
+            let convertedCount = 0;
+
+            console.log(`🎯 Long note candidates: ${longNoteCandidates.length} (converting ALL)`);
+
+            const notesToRemove = new Set();  // 삭제할 노트들 (중복 방지)
+
+            for (const candidate of longNoteCandidates) {
+                // 이미 롱노트로 변환된 노트가 포함되어 있으면 스킵
+                const alreadyConverted = candidate.sequence.some(item => item.note.type === 'long' || notesToRemove.has(item.note));
+                if (alreadyConverted) continue;
+
+                // 시작 노트를 롱노트로 변환
+                const startNote = candidate.sequence[0].note;
+                startNote.type = 'long';
+                startNote.endTime = candidate.endTime;
+
+                // 중간 노트들을 삭제 대상으로 마킹
+                for (let i = 1; i < candidate.sequence.length; i++) {
+                    notesToRemove.add(candidate.sequence[i].note);
+                }
+
+                convertedCount++;
+            }
+
+            // 삭제 대상 노트들 제거
+            const beforeRemoval = editorState.notes.length;
+            editorState.notes = editorState.notes.filter(note => !notesToRemove.has(note));
+            const afterRemoval = editorState.notes.length;
+            const removed = beforeRemoval - afterRemoval;
+
+            console.log(`🎵 Long note conversion complete:`);
+            console.log(`   - Converted: ${convertedCount} long notes`);
+            console.log(`   - Removed: ${removed} merged notes`);
+            console.log(`   - Total notes: ${editorState.notes.length} (${editorState.notes.filter(n => n.type === 'long').length} long, ${editorState.notes.filter(n => n.type === 'normal').length} normal)`);
+
+            return convertedCount;
+        }
+
+        // 일반 노트 Graphics 그리기 (한 번만)
+        function drawNormalNote(noteSprite, laneColor, isSelected) {
+            const NOTE_HEIGHT = 20;
+            const noteWidth = LANE_WIDTH - 10;
+            const alpha = isSelected ? 1.0 : 0.9;
+
+            noteSprite.clear();
+            noteSprite.roundRect(0, 0, noteWidth, NOTE_HEIGHT, 8);
+            noteSprite.fill({ color: laneColor, alpha: alpha });
+            noteSprite.roundRect(0, 0, noteWidth, NOTE_HEIGHT, 8);
+
+            const strokeColor = isSelected ? 0xFFFF00 : 0xFFFFFF;
+            const strokeWidth = isSelected ? 4 : 2;
+            noteSprite.stroke({ color: strokeColor, width: strokeWidth, alpha: isSelected ? 1.0 : 0.5 });
+        }
+
+        // 모든 노트 스프라이트 미리 생성 + 일반 노트 그리기 (pop-in 방지)
+        function preCreateAllNoteSprites() {
+            if (!notesContainer) {
+                console.warn('⚠️ notesContainer not initialized yet');
+                return;
+            }
+
+            console.log(`🎨 Pre-creating ${editorState.notes.length} note sprites...`);
+
+            editorState.notes.forEach((note, index) => {
+                if (!note.sprite) {
+                    const noteSprite = new PIXI.Graphics();
+                    note.sprite = noteSprite;
+                    noteSprite.visible = false; // 처음엔 숨김
+                    notesContainer.addChild(noteSprite);
+
+                    // 일반 노트는 미리 그리기 (롱노트는 매 프레임 업데이트)
+                    const isLongNote = note.type === 'long' && note.endTime;
+                    if (!isLongNote) {
+                        const laneColor = LANES[note.lane].color;
+                        const isSelected = editorState.selectedNotes.has(index);
+                        drawNormalNote(noteSprite, laneColor, isSelected);
+                    }
+
+                    // 편집 모드 이벤트 설정
+                    if (editorState.editMode) {
+                        noteSprite.interactive = true;
+                        noteSprite.cursor = 'pointer';
+                        noteSprite.eventMode = 'static';
+                        noteSprite.noteIndex = index;
+
+                        noteSprite.on('pointerdown', (event) => {
+                            const idx = event.target.noteIndex;
+                            const targetNote = editorState.notes[idx];
+                            const isLong = targetNote.type === 'long' && targetNote.endTime;
+
+                            if (editorState.selectedNotes.has(idx)) {
+                                editorState.selectedNotes.delete(idx);
+                            } else {
+                                editorState.selectedNotes.add(idx);
+                            }
+
+                            // 일반 노트는 선택 상태 변경 시 다시 그리기
+                            if (!isLong) {
+                                const laneColor = LANES[targetNote.lane].color;
+                                drawNormalNote(noteSprite, laneColor, editorState.selectedNotes.has(idx));
+                            }
+                        });
+                    }
+                }
+            });
+
+            console.log(`✅ Pre-created ${editorState.notes.length} sprites`);
+        }
+
         function generateNotes() {
+            // 기존 스프라이트 정리
+            editorState.notes.forEach(note => {
+                if (note.sprite) {
+                    note.sprite.destroy();
+                    note.sprite = null;
+                }
+            });
+
             editorState.notes = [];
 
             const beatDuration = 60 / editorState.bpm;
+            const numLanes = LANES.length;
 
-            console.log(`🎯 Pure Onset-Based Generation: BPM ${editorState.bpm}`);
+            console.log(`🎯 Pure Onset-Based Generation: BPM ${editorState.bpm}, Lanes: ${numLanes}`);
             console.log(`⚠️ 확률 없음! Onset만 보고 1:1 노트 생성`);
 
-            // 난이도별 Onset threshold만 설정 (확률 제거!)
+            // 난이도별 Onset threshold 설정
             const difficultySettings = {
                 'Easy': {
                     threshold: 0.30,  // 강한 비트만
@@ -1218,7 +1612,7 @@
                     description: '중간 비트'
                 },
                 'Hard': {
-                    threshold: 0.15,  // 약한 비트까지 (더 낮춤!)
+                    threshold: 0.15,  // 약한 비트까지
                     description: '약한 비트까지'
                 },
                 'Expert': {
@@ -1228,7 +1622,7 @@
             };
 
             const settings = difficultySettings[editorState.difficulty];
-            console.log(`Difficulty: ${editorState.difficulty} - ${settings.description}, Threshold: ${settings.threshold}`);
+            console.log(`Difficulty: ${editorState.difficulty} (${numLanes} lanes) - ${settings.description}, Threshold: ${settings.threshold}`);
 
             if (!editorState.onsets || editorState.onsets.length === 0) {
                 console.error('No onset data available!');
@@ -1236,16 +1630,19 @@
                 return;
             }
 
-            let lastLane = 0;  // 레인 교대 패턴용
-            let lastLeftLane = 0;  // 왼손 마지막 레인 (D/F 교대용)
-            let lastRightLane = 3;  // 오른손 마지막 레인 (J/K 교대용)
+            // 5레인 기준으로 생성 후 난이도별 매핑
             let processedOnsets = 0;
             let skippedWeak = 0;
             let skippedDuplicate = 0;
 
+            // 5레인 기준 레인 트래커
+            let lastLane = 0;
+            let lastLeftLane = 0;   // D/F 교대용
+            let lastRightLane = 3;  // J/K 교대용
+
             console.log(`Processing ${editorState.onsets.length} onsets...`);
 
-            // Onset 직접 순회 (BPM 그리드 무시!)
+            // Onset 직접 순회
             for (let i = 0; i < editorState.onsets.length; i++) {
                 const onsetStrength = editorState.onsets[i];
                 const onsetTime = editorState.onsetTimes[i];
@@ -1283,8 +1680,8 @@
                     continue;
                 }
 
-                // 6. 레인 결정 - 드럼 타입 기반 + 좌우 균형
-                let lane = 0;
+                // 6. 5레인 기준으로 레인 결정
+                let lane5 = 0;  // 5레인 기준 (0-4)
                 const kickStrength = editorState.kickOnsets[i] || 0;
                 const snareStrength = editorState.snareOnsets[i] || 0;
                 const hihatStrength = editorState.hihatOnsets[i] || 0;
@@ -1293,45 +1690,66 @@
                 let isLeftHand = (lastLane === 0 || lastLane === 1);
 
                 if (kickStrength === maxDrumStrength && kickStrength > 0.15) {
-                    // Kick → 왼손 교대 (D↔F) - 왼손 전용 트래커 사용!
-                    lane = (lastLeftLane === 0) ? 1 : 0;  // D↔F 확실한 교대
-                    lastLeftLane = lane;  // 왼손 마지막 레인 업데이트
+                    // Kick → 왼손 교대 (D↔F)
+                    lane5 = (lastLeftLane === 0) ? 1 : 0;
+                    lastLeftLane = lane5;
                 } else if (snareStrength === maxDrumStrength && snareStrength > 0.15) {
-                    // Snare → 오른손 교대 (J↔K) - 오른손 전용 트래커 사용!
-                    lane = (lastRightLane === 3) ? 4 : 3;  // J↔K 확실한 교대
-                    lastRightLane = lane;  // 오른손 마지막 레인 업데이트
+                    // Snare → 오른손 교대 (J↔K)
+                    lane5 = (lastRightLane === 3) ? 4 : 3;
+                    lastRightLane = lane5;
                 } else if (hihatStrength === maxDrumStrength && hihatStrength > 0.15) {
                     // Hi-hat → 오른손 교대 (J↔K)
-                    lane = (lastRightLane === 3) ? 4 : 3;
-                    lastRightLane = lane;
+                    lane5 = (lastRightLane === 3) ? 4 : 3;
+                    lastRightLane = lane5;
                 } else {
-                    // 드럼이 명확하지 않으면 좌우 교대 (균형 유지)
+                    // 드럼이 명확하지 않으면 좌우 교대
                     if (isLeftHand) {
-                        // 왼손 → 오른손으로
-                        lane = (lastRightLane === 3) ? 4 : 3;
-                        lastRightLane = lane;
+                        lane5 = (lastRightLane === 3) ? 4 : 3;
+                        lastRightLane = lane5;
                     } else {
-                        // 오른손 → 왼손으로
-                        lane = (lastLeftLane === 0) ? 1 : 0;
-                        lastLeftLane = lane;
+                        lane5 = (lastLeftLane === 0) ? 1 : 0;
+                        lastLeftLane = lane5;
                     }
                 }
 
-                // 7. 노트 추가 (확률 없이 무조건!)
+                lastLane = lane5;
+
+                // 7. 난이도별 레인으로 매핑
+                let finalLane = mapLaneToDifficulty(lane5, editorState.difficulty);
+
+                // 매핑 실패 시 스킵 (해당 난이도에서 사용 안 하는 레인)
+                if (finalLane === -1) {
+                    continue;
+                }
+
+                // 8. 노트 추가
                 editorState.notes.push({
                     time: parseFloat(snappedTime.toFixed(3)),
-                    lane: lane
+                    lane: finalLane,
+                    type: 'normal'  // 일단 normal로 생성 (나중에 롱노트로 병합)
                 });
-
-                lastLane = lane;
             }
 
             editorState.notes.sort((a, b) => a.time - b.time);
 
-            console.log(`✅ Generated ${editorState.notes.length} notes`);
+            console.log(`✅ Generated ${editorState.notes.length} notes (before long note conversion)`);
+
+            // 9. 롱노트 자동 생성 (한 번만 실행, 중복 차단)
+            if (!editorState.longNotesConverted) {
+                convertToLongNotes();
+                editorState.longNotesConverted = true;
+                console.log(`🔒 Long note conversion locked`);
+            }
+            const longNotesAfter = editorState.notes.filter(n => n.type === 'long').length;
+
+            // 10. 모든 노트 스프라이트 미리 생성 (pop-in 방지)
+            preCreateAllNoteSprites();
+
             console.log(`📊 Stats:`);
             console.log(`   - Processed onsets: ${processedOnsets}`);
             console.log(`   - Created notes: ${editorState.notes.length}`);
+            console.log(`   - Normal notes: ${editorState.notes.filter(n => n.type === 'normal').length}`);
+            console.log(`   - Long notes: ${longNotesAfter}`);
             console.log(`   - Skipped (too weak): ${skippedWeak}`);
             console.log(`   - Skipped (duplicate): ${skippedDuplicate}`);
 
@@ -1340,16 +1758,20 @@
                 const lastNote = editorState.notes[editorState.notes.length - 1];
                 console.log(`⏱️ First: ${firstNote.time.toFixed(3)}s, Last: ${lastNote.time.toFixed(3)}s`);
 
-                // 레인 분포 통계
-                const laneCounts = [0, 0, 0, 0, 0];
-                editorState.notes.forEach(note => laneCounts[note.lane]++);
+                // 레인 분포 통계 (현재 난이도 기준)
+                const laneCounts = new Array(LANES.length).fill(0);
+                editorState.notes.forEach(note => {
+                    if (note.lane >= 0 && note.lane < LANES.length) {
+                        laneCounts[note.lane]++;
+                    }
+                });
                 const totalNotes = editorState.notes.length;
-                console.log(`🎹 Lane distribution:`);
-                console.log(`   D(0): ${laneCounts[0]} (${(laneCounts[0]/totalNotes*100).toFixed(1)}%)`);
-                console.log(`   F(1): ${laneCounts[1]} (${(laneCounts[1]/totalNotes*100).toFixed(1)}%)`);
-                console.log(`   Space(2): ${laneCounts[2]} (${(laneCounts[2]/totalNotes*100).toFixed(1)}%)`);
-                console.log(`   J(3): ${laneCounts[3]} (${(laneCounts[3]/totalNotes*100).toFixed(1)}%)`);
-                console.log(`   K(4): ${laneCounts[4]} (${(laneCounts[4]/totalNotes*100).toFixed(1)}%)`);
+                console.log(`🎹 Lane distribution (${editorState.difficulty}, ${LANES.length} lanes):`);
+                LANES.forEach((lane, index) => {
+                    const count = laneCounts[index];
+                    const percentage = totalNotes > 0 ? (count/totalNotes*100).toFixed(1) : '0.0';
+                    console.log(`   ${lane.label}(${index}): ${count} (${percentage}%)`);
+                });
 
                 // NPS (Notes Per Second) 계산
                 const nps = (editorState.notes.length / editorState.duration).toFixed(2);
@@ -1366,6 +1788,7 @@
             }
 
             if (confirm('노트를 다시 생성하시겠습니까?')) {
+                editorState.longNotesConverted = false;  // 재생성 시 플래그 초기화
                 generateNotes();
                 alert(`🔄 재생성 완료!\n\n노트: ${editorState.notes.length}개\n난이도: ${editorState.difficulty}`);
             }
@@ -1464,7 +1887,8 @@
         function addNote(laneIndex, time) {
             const note = {
                 time: parseFloat(time.toFixed(3)),
-                lane: laneIndex
+                lane: laneIndex,
+                type: 'normal'  // 일반 노트
             };
 
             editorState.notes.push(note);
@@ -1690,56 +2114,95 @@
                 }
             }
 
-            notesContainer.removeChildren();
-
+            // 스프라이트 재사용 최적화: 매 프레임 재생성 대신 위치만 업데이트
             const NOTE_HEIGHT = 20;
             const NOTE_SPEED = 200;
 
+            // 화면에 보일 노트만 렌더링 (성능 최적화)
+            const viewportMargin = GAME_HEIGHT * 0.5;  // 화면 높이의 50% 여유 (충분한 사전 로딩)
+            const minTime = editorState.currentTime - (GAME_HEIGHT + viewportMargin) / NOTE_SPEED;
+            const maxTime = editorState.currentTime + viewportMargin / NOTE_SPEED;
+
             for (let i = 0; i < editorState.notes.length; i++) {
                 const note = editorState.notes[i];
+
+                // 빠른 컬링: 시간 범위 체크
+                const isLongNote = note.type === 'long' && note.endTime;
+                const isActiveLongNote = note.type === 'long' && !note.endTime;
+                const endTime = isLongNote ? note.endTime : note.time;
+
+                // 노트가 화면 범위 밖이면 숨김
+                const isInViewport = !(endTime < minTime || note.time > maxTime);
+
                 const timeDiff = note.time - editorState.currentTime;
                 const noteY = JUDGMENT_LINE_Y - timeDiff * NOTE_SPEED;
 
-                if (noteY > -50 && noteY < GAME_HEIGHT + 50) {
-                    const noteSprite = new PIXI.Graphics();
-                    noteSprite.roundRect(0, 0, LANE_WIDTH - 10, NOTE_HEIGHT, 8);
+                // 롱 노트의 경우 끝 지점 계산
+                let endNoteY = noteY;
+                if (isLongNote) {
+                    const endTimeDiff = note.endTime - editorState.currentTime;
+                    endNoteY = JUDGMENT_LINE_Y - endTimeDiff * NOTE_SPEED;
+                } else if (isActiveLongNote) {
+                    endNoteY = JUDGMENT_LINE_Y;
+                }
 
-                    let noteColor = LANES[note.lane].color;
+                // 스프라이트 재사용 (이미 preCreateAllNoteSprites에서 생성됨)
+                let noteSprite = note.sprite;
 
-                    // 선택된 노트는 밝게 표시
-                    const isSelected = editorState.selectedNotes.has(i);
-                    const alpha = isSelected ? 1.0 : 0.9;
-                    noteSprite.fill({ color: noteColor, alpha: alpha });
+                if (!noteSprite) {
+                    // 만약 스프라이트가 없다면 (수동 추가 노트 등) 즉석 생성
+                    noteSprite = new PIXI.Graphics();
+                    note.sprite = noteSprite;
+                    notesContainer.addChild(noteSprite);
+                }
 
-                    noteSprite.roundRect(0, 0, LANE_WIDTH - 10, NOTE_HEIGHT, 8);
+                // Visible 속성으로 culling
+                noteSprite.visible = isInViewport;
 
-                    // 선택된 노트는 노란색 테두리
-                    const strokeColor = isSelected ? 0xFFFF00 : 0xFFFFFF;
-                    const strokeWidth = isSelected ? 4 : 2;
-                    noteSprite.stroke({ color: strokeColor, width: strokeWidth, alpha: isSelected ? 1.0 : 0.5 });
+                if (!isInViewport) continue; // 안보이면 업데이트 스킵
 
-                    noteSprite.x = note.lane * LANE_WIDTH + 5;
-                    noteSprite.y = noteY - NOTE_HEIGHT / 2;
+                let noteColor = LANES[note.lane].color;
+                const isSelected = editorState.selectedNotes.has(i);
 
-                    // 편집 모드에서 클릭 가능하도록 설정
-                    if (editorState.editMode) {
-                        noteSprite.interactive = true;
-                        noteSprite.cursor = 'pointer';
-                        noteSprite.eventMode = 'static';
+                if (isLongNote || isActiveLongNote) {
+                    // 롱노트: 길이가 변하므로 매 프레임 다시 그리기
+                    noteSprite.clear();
+                    // 롱 노트: 최적화된 심플 디자인
+                    const longNoteHeight = Math.abs(noteY - endNoteY);
+                    const longNoteY = Math.min(noteY, endNoteY);
+                    const noteWidth = LANE_WIDTH - 10;
 
-                        noteSprite.on('pointerdown', (event) => {
-                            if (editorState.selectedNotes.has(i)) {
-                                editorState.selectedNotes.delete(i);
-                                console.log(`❌ 노트 선택 해제: ${i} (시간: ${note.time.toFixed(3)}s, 레인: ${note.lane})`);
-                            } else {
-                                editorState.selectedNotes.add(i);
-                                console.log(`✅ 노트 선택: ${i} (시간: ${note.time.toFixed(3)}s, 레인: ${note.lane})`);
-                            }
-                            console.log(`   총 선택된 노트: ${editorState.selectedNotes.size}개`);
-                        });
+                    // 1. 본체 (단색)
+                    noteSprite.roundRect(0, 0, noteWidth, longNoteHeight, 6);
+                    noteSprite.fill({ color: noteColor, alpha: 0.5 });
+
+                    // 2. 외곽 테두리
+                    noteSprite.roundRect(0, 0, noteWidth, longNoteHeight, 6);
+                    const strokeColor = isSelected ? 0xFFFF00 : (isActiveLongNote ? 0x00FF00 : 0xFFFFFF);
+                    noteSprite.stroke({ color: strokeColor, width: 4, alpha: 1.0 });
+
+                    // 3. 헤드 (시작 부분)
+                    const headHeight = NOTE_HEIGHT * 1.5;
+                    noteSprite.roundRect(0, 0, noteWidth, headHeight, 6);
+                    noteSprite.fill({ color: noteColor, alpha: 1.0 });
+                    noteSprite.roundRect(0, 0, noteWidth, headHeight, 6);
+                    noteSprite.stroke({ color: 0xFFFFFF, width: 2, alpha: 1.0 });
+
+                    // 4. 테일 (끝 부분)
+                    if (isLongNote) {
+                        const tailHeight = NOTE_HEIGHT * 1.5;
+                        noteSprite.roundRect(0, longNoteHeight - tailHeight, noteWidth, tailHeight, 6);
+                        noteSprite.fill({ color: noteColor, alpha: 1.0 });
+                        noteSprite.roundRect(0, longNoteHeight - tailHeight, noteWidth, tailHeight, 6);
+                        noteSprite.stroke({ color: 0xFFFFFF, width: 2, alpha: 1.0 });
                     }
 
-                    notesContainer.addChild(noteSprite);
+                    noteSprite.x = note.lane * LANE_WIDTH + 5;
+                    noteSprite.y = longNoteY;
+                } else {
+                    // 일반 노트: 위치만 업데이트 (이미 preCreateAllNoteSprites에서 그렸음)
+                    noteSprite.x = note.lane * LANE_WIDTH + 5;
+                    noteSprite.y = noteY - NOTE_HEIGHT / 2;
                 }
             }
 
@@ -1747,11 +2210,21 @@
         }
 
         function updateStats() {
-            document.getElementById('note-count').textContent = editorState.notes.length;
+            const normalNotes = editorState.notes.filter(n => n.type === 'normal' || !n.type).length;
+            const longNotes = editorState.notes.filter(n => n.type === 'long').length;
+            const totalNotes = editorState.notes.length;
+
+            document.getElementById('note-count').textContent = totalNotes;
 
             if (editorState.duration > 0) {
-                const nps = (editorState.notes.length / editorState.duration).toFixed(1);
+                const nps = (totalNotes / editorState.duration).toFixed(1);
                 document.getElementById('nps-display').textContent = nps;
+            }
+
+            // 콘솔에 롱노트 통계 출력
+            if (longNotes > 0) {
+                const longNoteRatio = ((longNotes / totalNotes) * 100).toFixed(1);
+                console.log(`📊 Stats: Total ${totalNotes} notes (Normal: ${normalNotes}, Long: ${longNotes}, ${longNoteRatio}%)`);
             }
 
             updateDensityGraph();
@@ -1837,6 +2310,14 @@
             const bpm = editorState.bpm;
             const difficulty = editorState.difficulty;
 
+            // 노트 데이터 정리 (sprite 속성 제외)
+            const cleanNotes = editorState.notes.map(note => ({
+                time: note.time,
+                lane: note.lane,
+                type: note.type,
+                endTime: note.endTime  // 롱노트용
+            }));
+
             const chartData = {
                 title,
                 bpm,
@@ -1844,7 +2325,7 @@
                 difficulty,
                 duration: editorState.duration,
                 lanes: LANES.length,
-                notes: editorState.notes,
+                notes: cleanNotes,  // sprite 제외된 깨끗한 데이터
                 audioFileName: editorState.audioFileName,  // 오디오 파일 이름 저장
                 metadata: {
                     nps: (editorState.notes.length / editorState.duration).toFixed(2),
@@ -1881,8 +2362,26 @@
                 try {
                     const chartData = JSON.parse(e.target.result);
 
+                    // 기존 스프라이트 정리
+                    editorState.notes.forEach(note => {
+                        if (note.sprite) {
+                            note.sprite.destroy();
+                            note.sprite = null;
+                        }
+                    });
+
                     // 차트 데이터 로드
                     editorState.notes = chartData.notes || [];
+
+                    // 하위 호환성: type이 없는 노트는 'normal'로 설정
+                    editorState.notes.forEach(note => {
+                        if (!note.type) {
+                            note.type = 'normal';
+                        }
+                    });
+
+                    editorState.longNotesConverted = true;  // 차트 로드 시 이미 변환된 것으로 간주
+
                     editorState.bpm = chartData.bpm || 120;
                     editorState.offset = chartData.offset || 0;
                     editorState.title = chartData.title || 'Untitled';
@@ -1890,11 +2389,24 @@
                     editorState.duration = chartData.duration || 0;
                     editorState.audioFileName = chartData.audioFileName || '';
 
+                    // 난이도에 따라 레인 업데이트
+                    LANES = DIFFICULTY_LANES[editorState.difficulty];
+                    console.log(`📂 차트 로드: ${editorState.difficulty} (레인 수: ${LANES.length})`);
+
                     // UI 업데이트
                     document.getElementById('bpm-input').value = editorState.bpm;
                     document.getElementById('offset-input').value = editorState.offset;
                     document.getElementById('title-input').value = editorState.title;
                     document.getElementById('difficulty-select').value = editorState.difficulty;
+
+                    // 레인 다시 그리기
+                    if (gameContainer) {
+                        gameContainer.removeChildren();
+                        drawLanes();
+                        drawJudgmentLine();
+                    }
+
+                    calculateDimensions();
 
                     // 노트 재렌더링
                     updateStats();
@@ -1958,6 +2470,12 @@
             const selectedIndices = Array.from(editorState.selectedNotes).sort((a, b) => b - a);
 
             for (const index of selectedIndices) {
+                const note = editorState.notes[index];
+                // 스프라이트 정리
+                if (note.sprite) {
+                    note.sprite.destroy();
+                    note.sprite = null;
+                }
                 editorState.notes.splice(index, 1);
             }
 
@@ -2028,6 +2546,30 @@
 
             updateStats();
             console.log(`⏱️ ${selectedIndices.length}개 노트 타이밍 조정: ${delta > 0 ? '+' : ''}${(delta * 1000).toFixed(0)}ms`);
+        }
+
+        function toggleLongNoteMode() {
+            editorState.longNoteMode = !editorState.longNoteMode;
+            const btn = document.getElementById('long-note-mode-btn');
+            const statusText = document.getElementById('long-note-status');
+
+            if (editorState.longNoteMode) {
+                btn.textContent = '🎵 롱노트 ON';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-success');
+                statusText.textContent = '롱 노트 모드';
+                statusText.style.color = '#38ef7d';
+                console.log('🎵 롱 노트 모드 활성화: 키를 누르고 있으면 롱 노트 생성');
+            } else {
+                btn.textContent = '🎵 롱노트 모드';
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-primary');
+                statusText.textContent = '일반 노트';
+                statusText.style.color = '#aaa';
+                // 활성 롱 노트 초기화
+                editorState.activeLongNotes = {};
+                console.log('🎵 일반 노트 모드로 전환');
+            }
         }
     </script>
 </body>
