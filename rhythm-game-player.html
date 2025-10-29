@@ -269,8 +269,15 @@
 
         canvas {
             display: block;
-            max-width: 100%;
-            max-height: 100%;
+        }
+
+        /* Ensure canvas doesn't block touch buttons */
+        #game-area {
+            position: relative;
+        }
+
+        #game-area .touch-button {
+            pointer-events: auto;
         }
 
         #particles {
@@ -326,8 +333,16 @@
             #game-area {
                 flex: 0 0 65%;
                 position: relative;
-                overflow: hidden;
+                overflow: visible;
                 height: 100%;
+            }
+
+            #game-area canvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: calc(100% - 110px); /* Leave space for touch buttons */
             }
 
             #lyrics-sidebar {
@@ -361,6 +376,15 @@
                 width: 100%;
                 height: 100%;
                 position: relative;
+                overflow: visible;
+            }
+
+            #game-area canvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: calc(100% - 110px); /* Leave space for touch buttons */
             }
 
             #lyrics-sidebar {
