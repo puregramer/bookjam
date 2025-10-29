@@ -454,7 +454,7 @@
             await loadFiles();
         });
 
-        async function loadFiles(skipAlert = false) {
+        async function loadFiles() {
             try {
                 // Load chart JSON
                 let chartText;
@@ -548,17 +548,13 @@
 
                 console.log(`✅ Audio loaded: ${gameState.audioBuffer.duration.toFixed(2)}s`);
 
-                // Show chart info before starting (unless skipping)
-                if (!skipAlert) {
-                    alert(`${title}\n난이도: ${difficulty}\nBPM: ${bpm}\n노트: ${noteCount}개 (NPS: ${nps})\n\n준비되면 게임이 시작됩니다!`);
-                }
-
                 // Hide menu and start game
                 document.getElementById('menu').classList.add('hidden');
                 await initGame();
             } catch (error) {
                 console.error('Error loading files:', error);
-                alert('파일 로드 실패: ' + error.message + '\n\n에디터에서 생성한 차트 파일(.json)인지 확인해주세요.');
+                // 에러 발생 시 메뉴로 돌아가기
+                document.getElementById('menu').classList.remove('hidden');
             }
         }
 
@@ -1460,20 +1456,34 @@
                     const fileGroups = menu.querySelectorAll('.file-group');
                     fileGroups.forEach(group => group.style.display = 'none');
 
+                    // 로고 이미지를 썸네일로 교체
+                    const menuLogo = document.getElementById('menu-logo');
+                    menuLogo.src = 'assets/thumbnail1.png';
+                    menuLogo.style.maxWidth = '400px';
+                    menuLogo.style.maxHeight = '300px';
+                    menuLogo.style.width = 'auto';
+                    menuLogo.style.height = 'auto';
+                    menuLogo.style.borderRadius = '20px';
+                    menuLogo.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
+
                     // 로고 아래 메시지 변경
                     const menuMessage = menu.querySelector('p');
                     menuMessage.textContent = `${title} - ${difficulty}`;
                     menuMessage.style.fontSize = '1.5em';
                     menuMessage.style.fontWeight = 'bold';
                     menuMessage.style.color = '#FF1493';
+                    menuMessage.style.marginTop = '20px';
 
-                    // 시작 버튼 활성화 및 텍스트 변경
-                    const startBtn = document.getElementById('start-btn');
+                    // 시작 버튼 교체 (기존 이벤트 리스너 제거)
+                    const oldBtn = document.getElementById('start-btn');
+                    const startBtn = oldBtn.cloneNode(true);
+                    oldBtn.parentNode.replaceChild(startBtn, oldBtn);
+
                     startBtn.disabled = false;
                     startBtn.textContent = '🎮 게임 시작! 🎮';
 
                     // 버튼 클릭 시 AudioContext resume 후 게임 시작
-                    startBtn.onclick = async () => {
+                    startBtn.addEventListener('click', async () => {
                         // AudioContext resume (사용자 제스처 필요)
                         if (gameState.audioContext.state === 'suspended') {
                             await gameState.audioContext.resume();
@@ -1482,11 +1492,11 @@
                         // 메뉴 숨기고 게임 시작
                         menu.classList.add('hidden');
                         await initGame();
-                    };
+                    });
 
                 } catch (error) {
-                    console.error('Auto-load failed:', error);
-                    alert('자동 로드 실패: ' + error.message);
+                    console.error('❌ Auto-load failed:', error);
+                    // 자동 로드 실패 시 일반 메뉴 표시
                 }
             }
         })();
