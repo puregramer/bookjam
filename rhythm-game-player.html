@@ -441,8 +441,8 @@
             NOTE_SPEED = GAME_HEIGHT * 0.4;
             // 터치 버튼 높이를 화면 크기에 따라 조정 (태블릿/모바일 고려)
             BUTTON_HEIGHT = Math.min(Math.max(80, GAME_HEIGHT * 0.12), 120);
-            // 판정선을 더 위로 올려서 터치 버튼이 화면에 잘 보이도록
-            JUDGMENT_LINE_Y = GAME_HEIGHT - BUTTON_HEIGHT - 30;
+            // 판정선을 충분히 위로 올려서 터치 버튼에 가려지지 않도록
+            JUDGMENT_LINE_Y = GAME_HEIGHT - BUTTON_HEIGHT - 60;
         }
         calculateDimensions();
 
