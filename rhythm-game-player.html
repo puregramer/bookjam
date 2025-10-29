@@ -721,6 +721,47 @@
             await loadFiles();
         });
 
+        // URL parameter auto-load support
+        function checkURLParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const index = urlParams.get('index');
+
+            if (index) {
+                // Define preset configurations
+                const presets = {
+                    '1': {
+                        audio: 'assets/WizardofOZ.mp3',
+                        chart: 'assets/WizardofOZ_Normal_chart.json'
+                    }
+                    // Add more presets here as needed
+                };
+
+                const preset = presets[index];
+                if (preset) {
+                    // Set files for auto-load
+                    chartFile = preset.chart;
+                    audioFile = preset.audio;
+
+                    // Update UI
+                    document.getElementById('chart-status').textContent = preset.chart.split('/').pop() + ' (Auto-loaded)';
+                    document.getElementById('chart-status').classList.add('loaded');
+                    document.getElementById('audio-status').textContent = preset.audio.split('/').pop() + ' (Auto-loaded)';
+                    document.getElementById('audio-status').classList.add('loaded');
+
+                    // Enable start button
+                    document.getElementById('start-btn').disabled = false;
+
+                    // Auto-start after a brief delay
+                    setTimeout(() => {
+                        loadFiles();
+                    }, 500);
+                }
+            }
+        }
+
+        // Check URL params on page load
+        checkURLParams();
+
         async function loadFiles() {
             try {
                 // Load chart JSON
