@@ -738,23 +738,31 @@
 
                 const preset = presets[index];
                 if (preset) {
-                    // Set files for auto-load
-                    chartFile = preset.chart;
-                    audioFile = preset.audio;
+                    // Hide menu and show loading message
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const menu = document.getElementById('menu');
+                        const menuContent = menu.querySelector('p');
 
-                    // Update UI
-                    document.getElementById('chart-status').textContent = preset.chart.split('/').pop() + ' (Auto-loaded)';
-                    document.getElementById('chart-status').classList.add('loaded');
-                    document.getElementById('audio-status').textContent = preset.audio.split('/').pop() + ' (Auto-loaded)';
-                    document.getElementById('audio-status').classList.add('loaded');
+                        // Hide file groups
+                        const fileGroups = document.querySelectorAll('.file-group');
+                        fileGroups.forEach(group => group.style.display = 'none');
 
-                    // Enable start button
-                    document.getElementById('start-btn').disabled = false;
+                        // Hide start button
+                        document.getElementById('start-btn').style.display = 'none';
 
-                    // Auto-start after a brief delay
-                    setTimeout(() => {
-                        loadFiles();
-                    }, 500);
+                        // Show loading message
+                        menuContent.textContent = '로딩 중...';
+                        menuContent.style.fontSize = '1.5em';
+
+                        // Set files for auto-load
+                        chartFile = preset.chart;
+                        audioFile = preset.audio;
+
+                        // Auto-start after a brief delay
+                        setTimeout(() => {
+                            loadFiles();
+                        }, 500);
+                    });
                 }
             }
         }
