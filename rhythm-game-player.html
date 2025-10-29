@@ -243,10 +243,21 @@
             display: none !important;
         }
 
+        /* Touch Buttons Container */
+        .touch-buttons-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 110px;
+            display: flex;
+            flex-direction: row;
+            z-index: 1000;
+        }
+
         /* Cute Touch Buttons */
         .touch-button {
-            position: fixed;
-            bottom: 0;
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -258,14 +269,11 @@
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(15px);
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        /* Desktop: buttons relative to game area (65% width) */
-        @media (min-width: 769px) {
-            .touch-button {
-                position: absolute;
-            }
+        .touch-button:first-child {
+            border-left: none;
         }
 
         .touch-button.active {
@@ -1105,21 +1113,21 @@
         }
 
         function createTouchButtons() {
-            // 기존 버튼 제거
-            gameState.touchButtons.forEach(button => {
-                if (button.parentNode) {
-                    button.parentNode.removeChild(button);
-                }
-            });
+            // 기존 버튼 컨테이너 제거
+            const oldContainer = document.querySelector('.touch-buttons-container');
+            if (oldContainer && oldContainer.parentNode) {
+                oldContainer.parentNode.removeChild(oldContainer);
+            }
             gameState.touchButtons = [];
+
+            // 버튼 컨테이너 생성
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.className = 'touch-buttons-container';
 
             // 난이도에 맞게 버튼 생성
             for (let i = 0; i < LANES.length; i++) {
                 const button = document.createElement('div');
                 button.className = 'touch-button';
-                button.style.left = (i * LANE_WIDTH) + 'px';
-                button.style.width = LANE_WIDTH + 'px';
-                button.style.height = BUTTON_HEIGHT + 'px';
                 button.textContent = LANES[i].label;
                 button.style.color = '#' + LANES[i].color.toString(16).padStart(6, '0');
                 button.style.background = `rgba(${(LANES[i].color >> 16) & 255}, ${(LANES[i].color >> 8) & 255}, ${LANES[i].color & 255}, 0.2)`;
@@ -1155,13 +1163,14 @@
                     handleKeyRelease(i);  // 롱노트 종료 처리 (마우스가 버튼 밖으로 나갈 때)
                 });
 
-                // Desktop: game-area에 추가 (absolute), Mobile: body에 추가 (fixed)
-                const isDesktop = window.innerWidth > 768;
-                const container = isDesktop ?
-                    (document.getElementById('game-area') || document.body) :
-                    document.body;
-                container.appendChild(button);
+                buttonsContainer.appendChild(button);
                 gameState.touchButtons.push(button);
+            }
+
+            // 버튼 컨테이너를 game-area에 추가
+            const gameArea = document.getElementById('game-area');
+            if (gameArea) {
+                gameArea.appendChild(buttonsContainer);
             }
         }
 
