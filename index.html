@@ -71,9 +71,35 @@
                 height: 38%;
             }
         }
+
+        /* 인트로 비디오 스타일 */
+        .intro-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1000;
+            background-color: #000;
+            transition: opacity 1s ease-out;
+        }
+
+        .intro-video.fade-out {
+            opacity: 0;
+        }
+
+        .intro-video.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
+    <!-- 인트로 비디오 -->
+    <video id="introVideo" class="intro-video" autoplay muted playsinline>
+        <source src="assets/intro.mp4" type="video/mp4">
+    </video>
+
     <div class="button-container">
         <!-- 가운데 캐릭터 (게임하기) 버튼 -->
         <a href="rhythm-game-player.html?index=0" class="invisible-button center-character-button"></a>
@@ -81,5 +107,38 @@
         <!-- 하단 버튼 영역 -->
         <a href="rhythm-game-player.html?index=0" class="invisible-button bottom-button"></a>
     </div>
+
+    <script>
+        const introVideo = document.getElementById('introVideo');
+        const MAX_PLAY_TIME = 6; // 6초까지만 재생
+
+        // 비디오 재생 시간 체크
+        introVideo.addEventListener('timeupdate', function() {
+            if (introVideo.currentTime >= MAX_PLAY_TIME) {
+                introVideo.pause();
+                introVideo.classList.add('fade-out');
+
+                // 페이드아웃 애니메이션 완료 후 비디오 숨기기
+                setTimeout(() => {
+                    introVideo.classList.add('hidden');
+                }, 1000); // 1초 페이드아웃
+            }
+        });
+
+        // 비디오 재생 종료 시 페이드아웃 (6초보다 짧은 경우 대비)
+        introVideo.addEventListener('ended', function() {
+            introVideo.classList.add('fade-out');
+
+            setTimeout(() => {
+                introVideo.classList.add('hidden');
+            }, 1000);
+        });
+
+        // 비디오 로드 실패 시 바로 숨기기
+        introVideo.addEventListener('error', function() {
+            console.log('비디오 로드 실패, 인트로 이미지로 전환합니다.');
+            introVideo.classList.add('hidden');
+        });
+    </script>
 </body>
 </html>
