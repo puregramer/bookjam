@@ -55,6 +55,22 @@
             height: 42%;
         }
 
+        /* 왼쪽 노래듣기 버튼 */
+        .left-listen-button {
+            top: 36%;
+            left: 16%;
+            width: 20%;
+            height: 42%;
+        }
+
+        /* 오른쪽 같이 부르기 버튼 */
+        .right-singalong-button {
+            top: 36%;
+            right: 16%;
+            width: 20%;
+            height: 42%;
+        }
+
         /* 하단 버튼 영역 */
         .bottom-button {
             bottom: 5%;
@@ -70,6 +86,79 @@
                 width: 34%;
                 height: 38%;
             }
+
+            .left-listen-button {
+                top: 30%;
+                left: 5%;
+                width: 25%;
+                height: 38%;
+            }
+
+            .right-singalong-button {
+                top: 30%;
+                right: 5%;
+                width: 25%;
+                height: 38%;
+            }
+        }
+
+        /* 이미지 모달 오버레이 */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .image-modal.show {
+            display: flex;
+        }
+
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 10px;
+            box-shadow: 0 0 50px rgba(102, 126, 234, 0.5);
+        }
+
+        /* 모달 내부 컨테이너 */
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 모달 내부 투명 버튼 */
+        .modal-button {
+            position: absolute;
+            bottom: 9%;
+            left: 19%;
+            width: 50%;
+            height: 10%;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            transition: background-color 0.2s ease;
+            z-index: 2001;
+        }
+
+        .modal-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-button:active {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         /* 인트로 비디오 스타일 */
@@ -101,16 +190,69 @@
     </video>
 
     <div class="button-container">
+        <!-- 왼쪽 노래듣기 버튼 -->
+        <button class="invisible-button left-listen-button" onclick="showListenImage()"></button>
+
         <!-- 가운데 캐릭터 (게임하기) 버튼 -->
         <a href="rhythm-game-player.html?index=1" class="invisible-button center-character-button"></a>
 
-        <!-- 하단 버튼 영역 -->
-        <a href="rhythm-game-player.html?index=1" class="invisible-button bottom-button"></a>
+        <!-- 오른쪽 같이 부르기 버튼 -->
+        <button class="invisible-button right-singalong-button" onclick="showSingAlongImage()"></button>
+    </div>
+
+    <!-- 노래듣기 이미지 모달 -->
+    <div id="imageModal" class="image-modal" onclick="hideListenImage()">
+        <img src="assets/ListentoSong.png" alt="노래듣기">
+    </div>
+
+    <!-- 같이 부르기 이미지 모달 -->
+    <div id="singAlongModal" class="image-modal" onclick="hideSingAlongImage()">
+        <div class="modal-content">
+            <img id="singAlongImage" src="assets/singAlong1.png" alt="같이 부르기">
+            <button class="modal-button" onclick="toggleSingAlongImage(event)"></button>
+        </div>
     </div>
 
     <script>
         const introVideo = document.getElementById('introVideo');
+        const imageModal = document.getElementById('imageModal');
+        const singAlongModal = document.getElementById('singAlongModal');
         const MAX_PLAY_TIME = 6; // 6초까지만 재생
+
+        // 노래듣기 이미지 모달 표시
+        function showListenImage() {
+            imageModal.classList.add('show');
+        }
+
+        // 노래듣기 이미지 모달 숨기기
+        function hideListenImage() {
+            imageModal.classList.remove('show');
+        }
+
+        // 같이 부르기 이미지 모달 표시
+        function showSingAlongImage() {
+            // 모달을 열 때마다 첫 번째 이미지로 초기화
+            const singAlongImage = document.getElementById('singAlongImage');
+            singAlongImage.src = 'assets/singAlong1.png';
+            singAlongModal.classList.add('show');
+        }
+
+        // 같이 부르기 이미지 모달 숨기기
+        function hideSingAlongImage() {
+            singAlongModal.classList.remove('show');
+        }
+
+        // 같이 부르기 이미지 전환 (singAlong1 <-> singAlong2)
+        function toggleSingAlongImage(event) {
+            event.stopPropagation(); // 모달 닫힘 방지
+            const singAlongImage = document.getElementById('singAlongImage');
+
+            if (singAlongImage.src.includes('singAlong1.png')) {
+                singAlongImage.src = 'assets/singAlong2.png';
+            } else {
+                singAlongImage.src = 'assets/singAlong1.png';
+            }
+        }
 
         // 비디오 재생 시간 체크
         introVideo.addEventListener('timeupdate', function() {
