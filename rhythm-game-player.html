@@ -335,19 +335,21 @@
             #game-layout {
                 display: flex;
                 flex-direction: row;
+                align-items: stretch;
             }
 
             #game-area {
                 flex: 0 0 65%;
                 position: relative;
                 overflow: visible;
-                height: 100%;
+                padding-bottom: 110px; /* Space for touch buttons */
+                box-sizing: border-box;
             }
 
             #game-area canvas {
                 display: block;
-                width: 100%;
-                height: 100%;
+                width: 100% !important;
+                height: 100% !important;
             }
 
             #lyrics-sidebar {
@@ -374,7 +376,8 @@
         /* Mobile/Small Screen Layout */
         @media (max-width: 768px) {
             #game-layout {
-                display: block;
+                display: flex;
+                flex-direction: column;
             }
 
             #game-area {
@@ -382,12 +385,14 @@
                 height: 100%;
                 position: relative;
                 overflow: visible;
+                padding-bottom: 110px; /* Space for touch buttons */
+                box-sizing: border-box;
             }
 
             #game-area canvas {
                 display: block;
-                width: 100%;
-                height: 100%;
+                width: 100% !important;
+                height: 100% !important;
             }
 
             #lyrics-sidebar {
@@ -811,25 +816,33 @@
         async function initGame() {
             calculateDimensions();
 
-            app = new PIXI.Application();
-            await app.init({
-                width: GAME_WIDTH,
-                height: GAME_HEIGHT,
-                backgroundColor: 0x2D3561,
-                antialias: true,
-                resolution: window.devicePixelRatio || 1
-            });
-
-            // Setup game layout
+            // Setup game layout first
             const gameLayout = document.getElementById('game-layout');
             const gameArea = document.getElementById('game-area');
 
             // Show game layout (remove hidden class)
             gameLayout.classList.remove('hidden');
 
-            // Add canvas to game area
+            // Create wrapper for canvas
+            const canvasWrapper = document.createElement('div');
+            canvasWrapper.style.flex = '1';
+            canvasWrapper.style.width = '100%';
+            canvasWrapper.style.position = 'relative';
             gameArea.innerHTML = '';
-            gameArea.appendChild(app.canvas);
+            gameArea.appendChild(canvasWrapper);
+
+            app = new PIXI.Application();
+            await app.init({
+                width: GAME_WIDTH,
+                height: GAME_HEIGHT,
+                backgroundColor: 0x2D3561,
+                antialias: true,
+                resolution: window.devicePixelRatio || 1,
+                resizeTo: canvasWrapper
+            });
+
+            // Add canvas to wrapper
+            canvasWrapper.appendChild(app.canvas);
 
             gameContainer = new PIXI.Container();
             beatGridContainer = new PIXI.Container();
